@@ -22,10 +22,10 @@ export function GlassCard({
 }) {
   const glowColor = GLOW[glow];
   return (
-    <div className="relative">
+    <div className="relative h-full">
       {glowColor && <div className="pointer-events-none absolute -inset-3 rounded-[28px] blur-2xl" style={{ background: glowColor }} />}
       <div
-        className={`relative rounded-xl border border-white/60 bg-white/65 p-4 shadow-[0_1px_2px_rgba(26,26,23,0.04)] backdrop-blur-xl ${className}`}
+        className={`relative h-full rounded-xl border border-white/60 bg-white/65 p-4 shadow-[0_1px_2px_rgba(26,26,23,0.04)] backdrop-blur-xl ${className}`}
       >
         {children}
       </div>
