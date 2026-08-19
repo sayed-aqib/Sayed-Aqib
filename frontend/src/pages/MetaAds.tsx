@@ -2,16 +2,26 @@ import { useQuery } from "@tanstack/react-query";
 import { getMetaAdsSummary, type AdsetRecommendation } from "../lib/api";
 import { formatINR, formatNumber, formatPct } from "../lib/format";
 import { Card } from "../components/Card";
+import { GlassCard } from "../components/GlassCard";
 import { InfoTip } from "../components/InfoTip";
 import { RuleBadge } from "../components/RuleBadge";
 import { EmptyState } from "../components/EmptyState";
 import { CardSkeleton } from "../components/Skeleton";
 
+const RULE_GLOW: Record<AdsetRecommendation["rule"], "positive" | "negative" | "caution" | "neutral"> = {
+  scale: "positive",
+  hold: "neutral",
+  cut: "negative",
+  pause: "negative",
+  insufficient_data: "caution",
+  too_new: "neutral",
+};
+
 function AdsetCard({ row, breakevenRoas }: { row: AdsetRecommendation; breakevenRoas: number | null }) {
   const roasVsBreakeven = breakevenRoas ? row.roas_7d / breakevenRoas : null;
 
   return (
-    <Card>
+    <GlassCard glow={RULE_GLOW[row.rule]}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs text-ink-muted">{row.campaign_name}</p>
@@ -62,7 +72,7 @@ function AdsetCard({ row, breakevenRoas }: { row: AdsetRecommendation; breakeven
         </p>
         <span className="ml-3 shrink-0 text-xs text-ink-muted">confidence: {row.confidence}</span>
       </div>
-    </Card>
+    </GlassCard>
   );
 }
 
@@ -114,7 +124,7 @@ export function MetaAds() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card>
+        <GlassCard>
           <div className="flex items-center gap-1 text-sm text-ink-muted">
             Break-even ROAS
             <InfoTip>
@@ -128,8 +138,8 @@ export function MetaAds() {
           <p className="tabular-nums mt-1 text-xs text-ink-muted">
             allowable CPA {formatINR(data.breakeven.allowable_cpa)} · margin {formatPct(data.breakeven.contribution_margin_ratio, 0)}
           </p>
-        </Card>
-        <Card>
+        </GlassCard>
+        <GlassCard>
           <div className="flex items-center gap-1 text-sm text-ink-muted">
             Blended MER
             <InfoTip>Total Shopify revenue ÷ total Meta spend, last 28 days — the honest number, since Meta over-attributes to itself.</InfoTip>
@@ -137,8 +147,8 @@ export function MetaAds() {
           <p className="tabular-nums mt-1 text-2xl font-semibold text-ink">
             {data.blended_mer !== null ? `${data.blended_mer.toFixed(2)}x` : "—"}
           </p>
-        </Card>
-        <Card>
+        </GlassCard>
+        <GlassCard>
           <div className="flex items-center gap-1 text-sm text-ink-muted">
             Platform-reported ROAS
             <InfoTip>What Meta itself claims, last 28 days — shown next to blended MER so the gap between them is visible.</InfoTip>
@@ -146,7 +156,7 @@ export function MetaAds() {
           <p className="tabular-nums mt-1 text-2xl font-semibold text-ink">
             {data.platform_roas_28d !== null ? `${data.platform_roas_28d.toFixed(2)}x` : "—"}
           </p>
-        </Card>
+        </GlassCard>
       </div>
 
       <div className="space-y-3">

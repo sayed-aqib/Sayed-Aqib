@@ -2,15 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getUnitEconomicsSummary, getFunnelSummary, getRetentionSummary, getKeywordsSummary, getMetaAdsSummary } from "../lib/api";
 import { formatPct } from "../lib/format";
 import { SealBadge } from "../components/SealBadge";
-
-// Ambient glow tied to the same semantic meaning as the number's text color —
-// ties into the ink/positive/negative palette rather than an arbitrary hue,
-// so the glass treatment reinforces the reading instead of decorating it.
-const GLOW: Record<string, string | null> = {
-  positive: "rgba(45,106,79,0.32)",
-  negative: "rgba(179,64,46,0.28)",
-  neutral: null,
-};
+import { GlassCard } from "../components/GlassCard";
 
 function HeadlineCard({
   title,
@@ -28,21 +20,17 @@ function HeadlineCard({
   seal?: string;
 }) {
   const color = tone === "positive" ? "text-positive" : tone === "negative" ? "text-negative" : "text-ink";
-  const glow = GLOW[tone];
   return (
-    <div className="relative">
-      {glow && <div className="pointer-events-none absolute -inset-3 rounded-[28px] blur-2xl" style={{ background: glow }} />}
-      <div className="relative rounded-xl border border-white/60 bg-white/65 p-4 shadow-[0_1px_2px_rgba(26,26,23,0.04)] backdrop-blur-xl">
-        <div className="flex items-start justify-between gap-2">
-          <p className="min-w-0 text-sm text-ink-muted">{title}</p>
-          {!loading && seal && <SealBadge label={seal} />}
-        </div>
-        <p className={`tabular-nums mt-1 text-2xl font-semibold ${loading ? "text-ink-muted" : color}`}>
-          {loading ? "…" : value}
-        </p>
-        <p className="mt-1 text-xs text-ink-muted">{sub}</p>
+    <GlassCard glow={tone}>
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 text-sm text-ink-muted">{title}</p>
+        {!loading && seal && <SealBadge label={seal} />}
       </div>
-    </div>
+      <p className={`tabular-nums mt-1 text-2xl font-semibold ${loading ? "text-ink-muted" : color}`}>
+        {loading ? "…" : value}
+      </p>
+      <p className="mt-1 text-xs text-ink-muted">{sub}</p>
+    </GlassCard>
   );
 }
 

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getFunnelSummary } from "../lib/api";
 import { formatNumber, formatPct } from "../lib/format";
 import { Card } from "../components/Card";
+import { GlassCard } from "../components/GlassCard";
 import { InfoTip } from "../components/InfoTip";
 import { LowConfidenceBadge } from "../components/LowConfidenceBadge";
 import { FunnelStep } from "../components/FunnelStep";
@@ -42,7 +43,7 @@ export function Funnel() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <Card>
+        <GlassCard>
           <div className="flex items-start justify-between">
             <h3 className="font-semibold text-ink">Shopify: sessions to purchase</h3>
             {shopify.low_confidence && <LowConfidenceBadge sampleSize={shopify.completed_checkout} />}
@@ -82,9 +83,9 @@ export function Funnel() {
               {formatNumber(shopify_referrer.paid_sessions + shopify_referrer.organic_sessions)})
             </span>
           </div>
-        </Card>
+        </GlassCard>
 
-        <Card>
+        <GlassCard>
           <div className="flex items-center gap-1">
             <h3 className="font-semibold text-ink">Amazon: sessions to units, by product</h3>
             <InfoTip>
@@ -116,7 +117,7 @@ export function Funnel() {
               </div>
             ))}
           </div>
-        </Card>
+        </GlassCard>
       </div>
     </div>
   );

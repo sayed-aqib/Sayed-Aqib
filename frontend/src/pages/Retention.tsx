@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getRetentionSummary, type CohortRow } from "../lib/api";
 import { formatNumber, formatPct } from "../lib/format";
 import { Card } from "../components/Card";
+import { GlassCard } from "../components/GlassCard";
 import { InfoTip } from "../components/InfoTip";
 import { LowConfidenceBadge } from "../components/LowConfidenceBadge";
 import { EmptyState } from "../components/EmptyState";
@@ -23,7 +24,7 @@ function StatCard({
   sampleSize: number;
 }) {
   return (
-    <Card>
+    <GlassCard glow={lowConfidence ? "caution" : "positive"}>
       <div className="flex items-center gap-1 text-sm text-ink-muted">
         {label}
         <InfoTip>{definition}</InfoTip>
@@ -35,7 +36,7 @@ function StatCard({
           <LowConfidenceBadge sampleSize={sampleSize} />
         </div>
       )}
-    </Card>
+    </GlassCard>
   );
 }
 
