@@ -1,0 +1,39 @@
+# Costs Hayah Care actually pays. Nothing here is guessed — these are
+# placeholder numbers until the founder gives real ones; every metric reads
+# from this file, never a hardcoded constant.
+#
+# Add a new entry under `versions` with a later `effective_date` when a cost
+# changes. Orders and Amazon product-days are always priced using the
+# version effective on *their own* date, so editing this file never changes
+# a past month's numbers — see backend/metrics/unit_economics.py:CostsConfig.
+versions:
+  - effective_date: 2026-01-01
+
+    cogs_per_unit:
+      NSS-400: 320.0
+      MOM-400: 300.0
+      CK-2PK: 90.0
+      NSS-830: 560.0
+
+    packaging_per_unit:
+      NSS-400: 25.0
+      MOM-400: 25.0
+      CK-2PK: 12.0
+      NSS-830: 35.0
+
+    # brand-borne shipping — the free-shipping leak the brief calls out.
+    # Amazon shipping cost is folded into the FBA fee below, not listed
+    # separately, because that's how Amazon bills it.
+    shipping_shopify_per_order: 90.0
+
+    fees:
+      shopify_gateway_pct: 0.020
+      shopify_gateway_fixed: 3.0
+      amazon_referral_pct: 0.15
+      amazon_fba_per_unit: 65.0
+
+    # forward-looking provision, applied as a % of revenue on top of any
+    # returns actually booked in the `returns` table for that period.
+    returns_provision_pct:
+      shopify: 0.02
+      amazon: 0.04

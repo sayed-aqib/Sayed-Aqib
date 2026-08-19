@@ -645,7 +645,9 @@ def gen_meta_ads_insights(start: date, days: int, rng: random.Random) -> tuple[l
         day = start + timedelta(days=day_offset)
         for camp, adsets in META_ADSETS.items():
             for adset in adsets:
-                spend = round(max(0.0, rng.gauss(900, 350)), 2)
+                # scaled so total spend lands around 15-20% of Shopify revenue —
+                # a small brand's real budget, not a number that bankrupts every order
+                spend = round(max(0.0, rng.gauss(35, 15)), 2)
                 cpm = rng.uniform(180, 420)
                 impressions = int(spend / cpm * 1000) if cpm else 0
                 # frequency creeps up in the back half of the window for one adset

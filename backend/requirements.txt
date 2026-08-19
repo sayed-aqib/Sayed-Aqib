@@ -5,3 +5,4 @@ pandas
 pydantic>=2
 pyyaml
 pytest
+httpx
