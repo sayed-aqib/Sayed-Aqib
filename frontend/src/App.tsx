@@ -5,7 +5,6 @@ import { Funnel } from "./pages/Funnel";
 import { Retention } from "./pages/Retention";
 import { Keywords } from "./pages/Keywords";
 import { MetaAds } from "./pages/MetaAds";
-import { BrandMark } from "./components/BrandMark";
 import { CoinsIcon, FunnelIcon, MegaphoneIcon, OverviewIcon, RetentionIcon, SearchIcon } from "./components/icons";
 
 const PAGES = {
@@ -26,12 +25,9 @@ function App() {
   return (
     <div className="flex min-h-screen bg-surface">
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-panel">
-        <div className="flex items-center gap-2.5 border-b border-border bg-gradient-to-b from-brand/[0.07] to-transparent px-5 py-5">
-          <BrandMark size={28} />
-          <div className="leading-tight">
-            <p className="text-[15px] font-bold tracking-tight text-brand">Hayah Care</p>
-            <p className="text-xs text-ink-muted">Growth Analytics</p>
-          </div>
+        <div className="border-b border-border bg-gradient-to-b from-brand/[0.07] to-transparent px-5 py-5">
+          <img src="/images/hayahcare-logo.png" alt="Hayah Care" className="h-9 w-auto" />
+          <p className="mt-1 text-xs text-ink-muted">Growth Analytics</p>
         </div>
 
         <nav className="flex-1 space-y-0.5 px-3 py-4">
