@@ -44,7 +44,7 @@ export function Overview() {
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-ink">Overview</h2>
-        <p className="text-sm text-ink-muted">The headline number from each module. Open a tab above for the detail behind any of these.</p>
+        <p className="text-sm text-ink-muted">The headline number from each module. Open one in the sidebar for the detail behind it.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
