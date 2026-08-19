@@ -1,8 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { getUnitEconomicsSummary, getFunnelSummary, getRetentionSummary, getKeywordsSummary, getMetaAdsSummary } from "../lib/api";
 import { formatPct } from "../lib/format";
-import { Card } from "../components/Card";
 import { SealBadge } from "../components/SealBadge";
+
+// Ambient glow tied to the same semantic meaning as the number's text color —
+// ties into the ink/positive/negative palette rather than an arbitrary hue,
+// so the glass treatment reinforces the reading instead of decorating it.
+const GLOW: Record<string, string | null> = {
+  positive: "rgba(45,106,79,0.32)",
+  negative: "rgba(179,64,46,0.28)",
+  neutral: null,
+};
 
 function HeadlineCard({
   title,
@@ -20,17 +28,21 @@ function HeadlineCard({
   seal?: string;
 }) {
   const color = tone === "positive" ? "text-positive" : tone === "negative" ? "text-negative" : "text-ink";
+  const glow = GLOW[tone];
   return (
-    <Card>
-      <div className="flex items-start justify-between gap-2">
-        <p className="min-w-0 text-sm text-ink-muted">{title}</p>
-        {!loading && seal && <SealBadge label={seal} />}
+    <div className="relative">
+      {glow && <div className="pointer-events-none absolute -inset-3 rounded-[28px] blur-2xl" style={{ background: glow }} />}
+      <div className="relative rounded-xl border border-white/60 bg-white/65 p-4 shadow-[0_1px_2px_rgba(26,26,23,0.04)] backdrop-blur-xl">
+        <div className="flex items-start justify-between gap-2">
+          <p className="min-w-0 text-sm text-ink-muted">{title}</p>
+          {!loading && seal && <SealBadge label={seal} />}
+        </div>
+        <p className={`tabular-nums mt-1 text-2xl font-semibold ${loading ? "text-ink-muted" : color}`}>
+          {loading ? "…" : value}
+        </p>
+        <p className="mt-1 text-xs text-ink-muted">{sub}</p>
       </div>
-      <p className={`tabular-nums mt-1 text-2xl font-semibold ${loading ? "text-ink-muted" : color}`}>
-        {loading ? "…" : value}
-      </p>
-      <p className="mt-1 text-xs text-ink-muted">{sub}</p>
-    </Card>
+    </div>
   );
 }
 
@@ -104,17 +116,20 @@ export function Overview() {
 
       <div>
         <h3 className="mb-3 font-semibold text-ink">Our Products</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <img
-            src="/images/nuts-seeds-supermix-marketing.png"
-            alt="Hayah Care Nuts & Seeds Supermix — ready to eat snack, premium quality ingredients"
-            className="w-full rounded-xl border border-border shadow-sm"
-          />
-          <img
-            src="/images/moms-supermix-marketing.png"
-            alt="Hayah Care Mom's Super Mix — effortless daily nutrition for mothers and families"
-            className="w-full rounded-xl border border-border shadow-sm"
-          />
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {[
+            { src: "nuts-seeds-supermix.png", name: "Nuts & Seeds Supermix", note: "400g · Shopify + Amazon" },
+            { src: "moms-supermix.png", name: "Mom's Supermix", note: "400g · Shopify + Amazon" },
+            { src: "chukku-kaappi-powder.png", name: "Chukku Kappi Powder", note: "2-pack · Shopify" },
+          ].map((p) => (
+            <div key={p.src} className="overflow-hidden rounded-xl border border-white/60 bg-white/70 shadow-sm backdrop-blur-xl">
+              <img src={`/images/${p.src}`} alt={`Hayah Care ${p.name}`} className="aspect-[4/5] w-full object-cover" />
+              <div className="p-3">
+                <p className="text-sm font-medium text-ink">{p.name}</p>
+                <p className="text-xs text-ink-muted">{p.note}</p>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>

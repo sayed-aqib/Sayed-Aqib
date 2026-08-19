@@ -23,11 +23,21 @@ function App() {
   const Page = PAGES[page].component;
 
   return (
-    <div className="flex min-h-screen bg-surface">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-panel">
-        <div className="border-b border-border bg-gradient-to-b from-brand/[0.07] to-transparent px-5 py-5">
-          <img src="/images/hayahcare-logo.png" alt="Hayah Care" className="h-9 w-auto" />
-          <p className="mt-1 text-xs text-ink-muted">Growth Analytics</p>
+    <div
+      className="flex min-h-screen"
+      style={{
+        background:
+          "radial-gradient(900px circle at 12% 8%, rgba(45,106,79,0.14), transparent 55%), " +
+          "radial-gradient(700px circle at 92% 18%, rgba(156,107,46,0.12), transparent 55%), " +
+          "radial-gradient(800px circle at 75% 90%, rgba(45,106,79,0.10), transparent 55%), " +
+          "radial-gradient(600px circle at 15% 85%, rgba(179,64,46,0.06), transparent 55%), " +
+          "linear-gradient(150deg, #eef2e8 0%, #fafaf8 45%, #fafaf8 60%, #f7f1e4 100%)",
+      }}
+    >
+      <aside className="flex w-60 shrink-0 flex-col border-r border-white/50 bg-panel/70 backdrop-blur-xl">
+        <div className="border-b border-white/50 px-5 py-5">
+          <img src="/images/hayahcare-logo.png" alt="Hayah Care" className="h-10 w-auto" />
+          <p className="mt-1.5 text-xs tracking-wide text-ink-muted uppercase">Growth Analytics</p>
         </div>
 
         <nav className="flex-1 space-y-0.5 px-3 py-4">
@@ -38,10 +48,10 @@ function App() {
               <button
                 key={key}
                 onClick={() => setPage(key)}
-                className={`flex w-full items-center gap-2.5 rounded-md border-l-2 px-3 py-2 text-left text-sm transition-colors ${
+                className={`flex w-full items-center gap-2.5 rounded-full px-3.5 py-2 text-left text-sm transition-colors ${
                   active
-                    ? "border-brand-gold bg-brand/[0.07] font-medium text-brand"
-                    : "border-transparent text-ink-muted hover:bg-border/40 hover:text-ink"
+                    ? "border border-brand/15 bg-white/70 font-medium text-brand shadow-[0_1px_3px_rgba(31,64,50,0.12)] backdrop-blur-md"
+                    : "border border-transparent text-ink-muted hover:bg-white/40 hover:text-ink"
                 }`}
               >
                 <Icon className="shrink-0" />
@@ -51,10 +61,10 @@ function App() {
           })}
         </nav>
 
-        <div className="border-t border-border px-5 py-3 text-xs text-ink-muted">Local · no auth · v1</div>
+        <div className="border-t border-white/50 px-5 py-3 text-xs text-ink-muted">Local · no auth · v1</div>
       </aside>
 
-      <main className="min-w-0 flex-1 bg-[linear-gradient(150deg,#eef2e8_0%,#fafaf8_38%,#fafaf8_62%,#f7f1e4_100%)] px-8 py-8">
+      <main className="min-w-0 flex-1 px-8 py-8">
         <div className="mx-auto max-w-5xl">
           <Page />
         </div>
