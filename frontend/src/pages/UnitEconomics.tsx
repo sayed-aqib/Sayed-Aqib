@@ -4,6 +4,7 @@ import { formatINR, formatNumber, formatPct } from "../lib/format";
 import { Card } from "../components/Card";
 import { InfoTip } from "../components/InfoTip";
 import { LowConfidenceBadge } from "../components/LowConfidenceBadge";
+import { CardSkeleton } from "../components/Skeleton";
 
 const CHANNEL_LABEL: Record<string, string> = { shopify: "Shopify", amazon: "Amazon" };
 
@@ -122,7 +123,12 @@ export function UnitEconomics() {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-ink-muted">Loading unit economics…</p>;
+    return (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <CardSkeleton lines={6} />
+        <CardSkeleton lines={6} />
+      </div>
+    );
   }
   if (isError || !data) {
     return (

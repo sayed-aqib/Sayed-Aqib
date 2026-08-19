@@ -5,6 +5,7 @@ import { Card } from "../components/Card";
 import { InfoTip } from "../components/InfoTip";
 import { LowConfidenceBadge } from "../components/LowConfidenceBadge";
 import { EmptyState } from "../components/EmptyState";
+import { CardSkeleton } from "../components/Skeleton";
 
 function QueryTable({
   rows,
@@ -60,7 +61,12 @@ export function Keywords() {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-ink-muted">Loading keywords…</p>;
+    return (
+      <div className="space-y-4">
+        <CardSkeleton lines={4} />
+        <CardSkeleton lines={4} />
+      </div>
+    );
   }
   if (isError || !data) {
     return (

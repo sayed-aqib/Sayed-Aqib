@@ -15,7 +15,12 @@
   --color-negative: #b3402e;
   --color-caution: #b58a00;
 
+  /* Brand accents — chrome and interaction only, never a data color.
+     brand-gold is deliberately a deeper caramel than --color-caution's
+     mustard so a low-confidence badge and a brand touch never read the
+     same at a glance. */
   --color-brand: #1f4032;
+  --color-brand-gold: #9c6b2e;
 }
 
 body {

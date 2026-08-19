@@ -5,6 +5,7 @@ import { Funnel } from "./pages/Funnel";
 import { Retention } from "./pages/Retention";
 import { Keywords } from "./pages/Keywords";
 import { MetaAds } from "./pages/MetaAds";
+import { BrandMark } from "./components/BrandMark";
 
 const PAGES = {
   overview: { label: "Overview", component: Overview },
@@ -25,14 +26,22 @@ function App() {
     <div className="min-h-screen bg-surface">
       <header className="border-b-2 border-brand bg-panel">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-          <span className="font-semibold text-ink">Hayah Care · Growth Analytics</span>
+          <span className="flex items-center gap-2">
+            <BrandMark />
+            <span>
+              <span className="font-semibold text-brand">Hayah Care</span>
+              <span className="text-ink-muted"> · Growth Analytics</span>
+            </span>
+          </span>
           <nav className="flex gap-1">
             {(Object.keys(PAGES) as PageKey[]).map((key) => (
               <button
                 key={key}
                 onClick={() => setPage(key)}
-                className={`rounded px-3 py-1.5 text-sm ${
-                  page === key ? "bg-ink text-surface" : "text-ink-muted hover:bg-border/60 hover:text-ink"
+                className={`rounded-t px-3 py-1.5 text-sm transition-colors ${
+                  page === key
+                    ? "border-b-2 border-brand-gold font-medium text-brand"
+                    : "border-b-2 border-transparent text-ink-muted hover:text-ink"
                 }`}
               >
                 {PAGES[key].label}

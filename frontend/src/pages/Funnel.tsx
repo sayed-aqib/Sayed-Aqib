@@ -5,6 +5,7 @@ import { Card } from "../components/Card";
 import { InfoTip } from "../components/InfoTip";
 import { LowConfidenceBadge } from "../components/LowConfidenceBadge";
 import { FunnelStep } from "../components/FunnelStep";
+import { CardSkeleton } from "../components/Skeleton";
 
 export function Funnel() {
   const { data, isLoading, isError, error } = useQuery({
@@ -13,7 +14,12 @@ export function Funnel() {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-ink-muted">Loading funnel…</p>;
+    return (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <CardSkeleton lines={5} />
+        <CardSkeleton lines={5} />
+      </div>
+    );
   }
   if (isError || !data) {
     return (

@@ -5,6 +5,7 @@ import { Card } from "../components/Card";
 import { InfoTip } from "../components/InfoTip";
 import { LowConfidenceBadge } from "../components/LowConfidenceBadge";
 import { EmptyState } from "../components/EmptyState";
+import { CardSkeleton } from "../components/Skeleton";
 
 function StatCard({
   label,
@@ -84,7 +85,13 @@ export function Retention() {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-ink-muted">Loading retention…</p>;
+    return (
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <CardSkeleton />
+        <CardSkeleton />
+        <CardSkeleton />
+      </div>
+    );
   }
   if (isError || !data) {
     return (

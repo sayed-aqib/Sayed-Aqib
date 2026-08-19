@@ -5,6 +5,7 @@ import { Card } from "../components/Card";
 import { InfoTip } from "../components/InfoTip";
 import { RuleBadge } from "../components/RuleBadge";
 import { EmptyState } from "../components/EmptyState";
+import { CardSkeleton } from "../components/Skeleton";
 
 function AdsetCard({ row, breakevenRoas }: { row: AdsetRecommendation; breakevenRoas: number | null }) {
   const roasVsBreakeven = breakevenRoas ? row.roas_7d / breakevenRoas : null;
@@ -72,7 +73,17 @@ export function MetaAds() {
   });
 
   if (isLoading) {
-    return <p className="text-sm text-ink-muted">Loading Meta ads…</p>;
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <CardSkeleton lines={1} />
+          <CardSkeleton lines={1} />
+          <CardSkeleton lines={1} />
+        </div>
+        <CardSkeleton lines={3} />
+        <CardSkeleton lines={3} />
+      </div>
+    );
   }
   if (isError || !data) {
     return (
