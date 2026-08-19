@@ -93,7 +93,7 @@ PRODUCTS = [
     ),
     Product(
         sku="CK-2PK",
-        shopify_title="Chukku Kappi Powder (2-Pack)",
+        shopify_title="Chukku Kappi Powder (2 x 150g)",
         amazon_title=None,
         asin=None,
         price=349.0,
