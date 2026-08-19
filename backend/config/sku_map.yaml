@@ -1,0 +1,25 @@
+# Maps whatever a channel calls a product back to a canonical product_id in
+# products.yaml. Assume Amazon ASINs, Shopify SKUs, and any spreadsheet name
+# will not match each other or the catalog — add an alias here instead of
+# touching adapter code. Resolution order (see backend/ingest/sku_map.py):
+#   1. raw code already equals a product_id
+#   2. raw code found in the relevant alias list below
+#   3. normalized product title found in title_aliases
+#   4. unresolved — row is logged as rejected, not silently dropped
+
+shopify_sku_aliases:
+  MOM-MIX-400: MOM-400   # retired when Mom's Mix 400g was renamed to Mom's Supermix 400g
+
+amazon_asin_aliases:
+  B0HAYA0001: NSS-400
+  B0HAYA0002: MOM-400
+  B0HAYA0003: NSS-830
+
+title_aliases:
+  "Mom's Mix 400g": MOM-400
+  "Mom's Supermix 400g": MOM-400
+  "Nuts & Seeds Supermix 400g": NSS-400
+  "Hayah Care Nuts & Seeds Supermix, 400g Jar": NSS-400
+  "Chukku Kappi Powder (2-Pack)": CK-2PK
+  "Hayah Care Mom's Supermix, 400g Jar": MOM-400
+  "Hayah Care Nuts & Seeds Supermix, 830g Jar": NSS-830

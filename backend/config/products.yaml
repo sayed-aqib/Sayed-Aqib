@@ -1,0 +1,24 @@
+# Canonical product catalog. This is the source of truth for product_id —
+# every adapter resolves whatever the channel calls a SKU/ASIN/title back to
+# one of these ids via config/sku_map.yaml. Add a row here before adding an
+# alias for it in the map.
+products:
+  - product_id: NSS-400
+    name: Nuts & Seeds Supermix 400g
+    channels: [shopify, amazon]
+    list_price: 999.0
+
+  - product_id: MOM-400
+    name: Mom's Supermix 400g
+    channels: [shopify, amazon]
+    list_price: 999.0
+
+  - product_id: CK-2PK
+    name: Chukku Kappi Powder (2-Pack)
+    channels: [shopify]
+    list_price: 349.0
+
+  - product_id: NSS-830
+    name: Nuts & Seeds Supermix 830g
+    channels: [amazon]
+    list_price: 1799.0
