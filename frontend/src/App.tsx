@@ -26,10 +26,10 @@ function App() {
   return (
     <div className="flex min-h-screen bg-surface">
       <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-panel">
-        <div className="flex items-center gap-2.5 border-b border-border px-5 py-4">
-          <BrandMark size={26} />
+        <div className="flex items-center gap-2.5 border-b border-border bg-gradient-to-b from-brand/[0.07] to-transparent px-5 py-5">
+          <BrandMark size={28} />
           <div className="leading-tight">
-            <p className="font-semibold text-brand">Hayah Care</p>
+            <p className="text-[15px] font-bold tracking-tight text-brand">Hayah Care</p>
             <p className="text-xs text-ink-muted">Growth Analytics</p>
           </div>
         </div>
@@ -58,7 +58,7 @@ function App() {
         <div className="border-t border-border px-5 py-3 text-xs text-ink-muted">Local · no auth · v1</div>
       </aside>
 
-      <main className="min-w-0 flex-1 px-8 py-8">
+      <main className="min-w-0 flex-1 bg-[linear-gradient(150deg,#eef2e8_0%,#fafaf8_38%,#fafaf8_62%,#f7f1e4_100%)] px-8 py-8">
         <div className="mx-auto max-w-5xl">
           <Page />
         </div>

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getUnitEconomicsSummary, getFunnelSummary, getRetentionSummary, getKeywordsSummary, getMetaAdsSummary } from "../lib/api";
 import { formatPct } from "../lib/format";
 import { Card } from "../components/Card";
+import { SealBadge } from "../components/SealBadge";
 
 function HeadlineCard({
   title,
@@ -9,17 +10,22 @@ function HeadlineCard({
   value,
   sub,
   tone = "neutral",
+  seal,
 }: {
   title: string;
   loading: boolean;
   value: string;
   sub: string;
   tone?: "positive" | "negative" | "neutral";
+  seal?: string;
 }) {
   const color = tone === "positive" ? "text-positive" : tone === "negative" ? "text-negative" : "text-ink";
   return (
     <Card>
-      <p className="text-sm text-ink-muted">{title}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-w-0 text-sm text-ink-muted">{title}</p>
+        {!loading && seal && <SealBadge label={seal} />}
+      </div>
       <p className={`tabular-nums mt-1 text-2xl font-semibold ${loading ? "text-ink-muted" : color}`}>
         {loading ? "…" : value}
       </p>
@@ -54,6 +60,7 @@ export function Overview() {
           value={shopifyMargin ? formatPct(shopifyMargin.contribution_margin_pct, 1) : "—"}
           sub="Unit Economics"
           tone={shopifyMargin && shopifyMargin.contribution_margin >= 0 ? "positive" : "negative"}
+          seal={shopifyMargin && shopifyMargin.contribution_margin_pct >= 0.3 ? "Healthy margin" : undefined}
         />
         <HeadlineCard
           title="Amazon contribution margin"
@@ -61,6 +68,7 @@ export function Overview() {
           value={amazonMargin ? formatPct(amazonMargin.contribution_margin_pct, 1) : "—"}
           sub="Unit Economics"
           tone={amazonMargin && amazonMargin.contribution_margin >= 0 ? "positive" : "negative"}
+          seal={amazonMargin && amazonMargin.contribution_margin_pct >= 0.3 ? "Healthy margin" : undefined}
         />
         <HeadlineCard
           title="Shopify conversion rate"
@@ -73,6 +81,7 @@ export function Overview() {
           loading={retention.isLoading}
           value={retention.data?.has_data ? formatPct(retention.data.overall.repeat_rate, 0) : "—"}
           sub="Retention — Shopify customers who ordered again"
+          seal={retention.data?.has_data && retention.data.overall.repeat_rate >= 0.35 ? "Strong retention" : undefined}
         />
         <HeadlineCard
           title="Keywords needing a fix"

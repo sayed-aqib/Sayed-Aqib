@@ -5,6 +5,7 @@ import { Card } from "../components/Card";
 import { InfoTip } from "../components/InfoTip";
 import { LowConfidenceBadge } from "../components/LowConfidenceBadge";
 import { CardSkeleton } from "../components/Skeleton";
+import { SealBadge } from "../components/SealBadge";
 
 const CHANNEL_LABEL: Record<string, string> = { shopify: "Shopify", amazon: "Amazon" };
 
@@ -36,9 +37,13 @@ function ChannelCard({ summary, skus }: { summary: ChannelSummary; skus: SkuSumm
 
   return (
     <Card>
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-2">
         <h3 className="font-semibold text-ink">{CHANNEL_LABEL[summary.channel]}</h3>
-        {summary.low_confidence && <LowConfidenceBadge sampleSize={summary.sample_size} />}
+        {summary.low_confidence ? (
+          <LowConfidenceBadge sampleSize={summary.sample_size} />
+        ) : (
+          summary.contribution_margin_pct >= 0.3 && <SealBadge label="Healthy margin" />
+        )}
       </div>
 
       <div className="mt-3 flex items-baseline gap-2">
