@@ -1,0 +1,29 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface: #fafaf8;
+  --color-panel: #ffffff;
+  --color-border: #e4e3de;
+
+  --color-ink: #1a1a17;
+  --color-ink-muted: #6e6e66;
+
+  --color-positive: #2d6a4f;
+  --color-negative: #b3402e;
+  --color-caution: #b58a00;
+
+  --color-brand: #1f4032;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-ink);
+  font-feature-settings: "tnum" 1, "lnum" 1;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums lining-nums;
+}
