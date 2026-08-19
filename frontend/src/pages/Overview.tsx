@@ -116,21 +116,73 @@ export function Overview() {
 
       <div>
         <h3 className="mb-3 font-semibold text-ink">Our Products</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          {[
-            { src: "nuts-seeds-supermix.png", name: "Nuts & Seeds Supermix", note: "400g · Shopify + Amazon" },
-            { src: "moms-supermix.png", name: "Mom's Supermix", note: "400g · Shopify + Amazon" },
-            { src: "chukku-kaappi-powder.png", name: "Chukku Kappi Powder", note: "2-pack · Shopify" },
-          ].map((p) => (
-            <div key={p.src} className="overflow-hidden rounded-xl border border-white/60 bg-white/70 shadow-sm backdrop-blur-xl">
-              <img src={`/images/${p.src}`} alt={`Hayah Care ${p.name}`} className="aspect-[4/5] w-full object-cover" />
-              <div className="p-3">
-                <p className="text-sm font-medium text-ink">{p.name}</p>
-                <p className="text-xs text-ink-muted">{p.note}</p>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+          {PRODUCTS.map((p) => (
+            <ProductCard key={p.src} product={p} margin={avgMargin(ue.data?.skus, p.productIds)} />
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+const PRODUCTS = [
+  {
+    src: "nuts-seeds-supermix.png",
+    name: "Nuts & Seeds Supermix",
+    note: "400g · Shopify + Amazon",
+    accent: "#C9A227",
+    productIds: ["NSS-400"],
+  },
+  {
+    src: "moms-supermix.png",
+    name: "Mom's Supermix",
+    note: "400g · Shopify + Amazon",
+    accent: "#D46A9F",
+    productIds: ["MOM-400"],
+  },
+  {
+    src: "chukku-kaappi-powder.png",
+    name: "Chukku Kappi Powder",
+    note: "2-pack · Shopify",
+    accent: "#9C6B2E",
+    productIds: ["CK-2PK"],
+  },
+];
+
+function avgMargin(skus: { product_id: string; contribution_margin_pct: number; units: number }[] | undefined, ids: string[]): number | null {
+  if (!skus) return null;
+  const rows = skus.filter((s) => ids.includes(s.product_id));
+  const totalUnits = rows.reduce((acc, r) => acc + r.units, 0);
+  if (!totalUnits) return null;
+  return rows.reduce((acc, r) => acc + r.contribution_margin_pct * r.units, 0) / totalUnits;
+}
+
+function ProductCard({
+  product,
+  margin,
+}: {
+  product: (typeof PRODUCTS)[number];
+  margin: number | null;
+}) {
+  return (
+    <div className="group overflow-hidden rounded-xl border border-white/60 bg-white/70 shadow-sm backdrop-blur-xl transition-shadow duration-300 hover:shadow-lg">
+      <div className="h-1" style={{ backgroundColor: product.accent }} />
+      <div className="relative overflow-hidden">
+        <img
+          src={`/images/${product.src}`}
+          alt={`Hayah Care ${product.name}`}
+          className="aspect-[4/5] w-full object-cover saturate-[1.08] contrast-[1.03] transition-transform duration-500 ease-out group-hover:scale-[1.06]"
+        />
+        {margin !== null && (
+          <span className="absolute bottom-2.5 left-2.5 rounded-full border border-white/50 bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur-md">
+            {formatPct(margin, 0)} margin
+          </span>
+        )}
+      </div>
+      <div className="p-3">
+        <p className="text-sm font-medium text-ink">{product.name}</p>
+        <p className="text-xs text-ink-muted">{product.note}</p>
       </div>
     </div>
   );
