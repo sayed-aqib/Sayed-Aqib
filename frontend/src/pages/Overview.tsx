@@ -48,9 +48,12 @@ export function Overview() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold text-ink">Overview</h2>
-        <p className="text-sm text-ink-muted">The headline number from each module. Open one in the sidebar for the detail behind it.</p>
+      <div className="overflow-hidden rounded-xl border border-border bg-[linear-gradient(120deg,#26493a_0%,#3a5f4a_55%,#2f4f3d_100%)] px-6 py-6 shadow-sm">
+        <h2 className="text-xl font-bold tracking-tight text-white">Growth Snapshot</h2>
+        <p className="mt-1 max-w-xl text-sm text-white/80">
+          The headline number from each module, all in one place. Open a page in the sidebar for the full detail
+          behind any of these.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -97,6 +100,22 @@ export function Overview() {
           sub="Meta Ads — scale, cut, or pause recommended"
           tone={actionableAdsets > 0 ? "negative" : "neutral"}
         />
+      </div>
+
+      <div>
+        <h3 className="mb-3 font-semibold text-ink">Our Products</h3>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <img
+            src="/images/nuts-seeds-supermix-marketing.png"
+            alt="Hayah Care Nuts & Seeds Supermix — ready to eat snack, premium quality ingredients"
+            className="w-full rounded-xl border border-border shadow-sm"
+          />
+          <img
+            src="/images/moms-supermix-marketing.png"
+            alt="Hayah Care Mom's Super Mix — effortless daily nutrition for mothers and families"
+            className="w-full rounded-xl border border-border shadow-sm"
+          />
+        </div>
       </div>
     </div>
   );
