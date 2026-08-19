@@ -50,10 +50,28 @@ def get_shopify_orders_and_items(
 def get_amazon_traffic(con: duckdb.DuckDBPyConnection, start: date, end: date) -> pd.DataFrame:
     return con.execute(
         """
-        SELECT date, raw_asin, product_id, units_ordered, ordered_product_sales
+        SELECT date, raw_asin, product_id, sessions, units_ordered, ordered_product_sales
         FROM amazon_product_traffic_daily
         WHERE date >= ? AND date < ?
         """,
+        [start, end],
+    ).df()
+
+
+def get_shopify_funnel_daily(con: duckdb.DuckDBPyConnection, start: date, end: date) -> pd.DataFrame:
+    return con.execute(
+        """
+        SELECT date, sessions, added_to_cart, reached_checkout, completed_checkout
+        FROM shopify_funnel_daily
+        WHERE date >= ? AND date < ?
+        """,
+        [start, end],
+    ).df()
+
+
+def get_shopify_referrer_sessions(con: duckdb.DuckDBPyConnection, start: date, end: date) -> pd.DataFrame:
+    return con.execute(
+        "SELECT date, referrer, sessions FROM sessions_daily WHERE date >= ? AND date < ?",
         [start, end],
     ).df()
 

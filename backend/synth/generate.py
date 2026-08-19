@@ -415,6 +415,48 @@ def gen_sessions_daily(events: list[OrderEvent], start: date, days: int, rng: ra
     return fieldnames, rows
 
 
+def gen_shopify_funnel_daily(
+    events: list[OrderEvent], sessions_daily_rows: list[dict], rng: random.Random
+) -> tuple[list[str], list[dict]]:
+    """Shopify's own funnel report: sessions -> add to cart -> checkout ->
+    purchase. Built from the same per-day session counts as sessions_by_day
+    (so the two reports agree on sessions) and anchored to the *actual*
+    per-day order count for completed checkout, then worked backwards
+    through realistic drop-off ratios — otherwise "completed checkout" and
+    the real order count drift apart with nothing tying them together."""
+    shopify_orders_by_day: dict[int, int] = {}
+    for ev in events:
+        if ev.channel == "shopify":
+            shopify_orders_by_day[ev.day_offset] = shopify_orders_by_day.get(ev.day_offset, 0) + 1
+
+    fieldnames = ["Date", "Sessions", "Added to Cart", "Reached Checkout", "Completed Checkout"]
+    rows = []
+    for day_offset, row in enumerate(sessions_daily_rows):
+        sessions = row["Sessions"]
+        completed_checkout = shopify_orders_by_day.get(day_offset, 0)
+
+        checkout_complete_rate = rng.uniform(0.55, 0.75)
+        reached_checkout = max(
+            completed_checkout, int(completed_checkout / checkout_complete_rate) if checkout_complete_rate else 0
+        )
+        cart_to_checkout_rate = rng.uniform(0.55, 0.75)
+        added_to_cart = max(
+            reached_checkout, int(reached_checkout / cart_to_checkout_rate) if cart_to_checkout_rate else 0
+        )
+        added_to_cart = min(added_to_cart, sessions)
+        reached_checkout = min(reached_checkout, added_to_cart)
+        completed_checkout = min(completed_checkout, reached_checkout)
+
+        rows.append({
+            "Date": row["Date"],
+            "Sessions": sessions,
+            "Added to Cart": added_to_cart,
+            "Reached Checkout": reached_checkout,
+            "Completed Checkout": completed_checkout,
+        })
+    return fieldnames, rows
+
+
 REFERRERS = ["Direct", "Google (organic)", "Instagram", "Facebook Ads", "Google Ads", "Email", "Other"]
 REFERRER_WEIGHTS = [0.22, 0.18, 0.15, 0.20, 0.10, 0.05, 0.10]
 
@@ -696,6 +738,10 @@ def generate(seed: int, days: int, end_date: date, out_dir: Path, n_customers: i
     fn, sessions_daily_rows = gen_sessions_daily(events, start, days, rng)
     write_csv(out_dir / "shopify_sessions_daily" / "sessions_by_day.csv", fn, sessions_daily_rows)
     counts["shopify_sessions_daily"] = len(sessions_daily_rows)
+
+    fn, rows = gen_shopify_funnel_daily(events, sessions_daily_rows, rng)
+    write_csv(out_dir / "shopify_funnel_daily" / "funnel_by_day.csv", fn, rows)
+    counts["shopify_funnel_daily"] = len(rows)
 
     fn, rows = gen_sessions_referrer(sessions_daily_rows, rng)
     write_csv(out_dir / "shopify_sessions_referrer" / "sessions_by_referrer.csv", fn, rows)

@@ -20,6 +20,7 @@ from backend.ingest import (
     meta_ads_insights,
     shopify_abandoned_checkouts,
     shopify_customers,
+    shopify_funnel,
     shopify_orders,
     shopify_sessions,
 )
@@ -41,6 +42,7 @@ def run_all(con: duckdb.DuckDBPyConnection, raw_dir: Path) -> list[IngestResult]
         "shopify_orders": lambda p: shopify_orders.ingest_shopify_orders(con, p, sku_map),
         "shopify_customers": lambda p: shopify_customers.ingest_shopify_customers(con, p),
         "shopify_sessions_daily": lambda p: shopify_sessions.ingest_shopify_sessions_daily(con, p),
+        "shopify_funnel_daily": lambda p: shopify_funnel.ingest_shopify_funnel_daily(con, p),
         "shopify_sessions_referrer": lambda p: shopify_sessions.ingest_shopify_sessions_referrer(con, p),
         "shopify_abandoned_checkouts": lambda p: shopify_abandoned_checkouts.ingest_shopify_abandoned_checkouts(con, p),
         "amazon_detail_page_sales_traffic": lambda p: amazon_detail_page_sales_traffic.ingest_amazon_product_traffic(con, p, sku_map),

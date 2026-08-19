@@ -87,6 +87,16 @@ DDL_STATEMENTS = [
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS shopify_funnel_daily (
+        date                DATE PRIMARY KEY,
+        sessions            INTEGER,
+        added_to_cart       INTEGER,
+        reached_checkout    INTEGER,
+        completed_checkout  INTEGER,
+        source_file         VARCHAR NOT NULL
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS abandoned_checkouts (
         checkout_id    VARCHAR PRIMARY KEY,
         created_at     TIMESTAMP NOT NULL,

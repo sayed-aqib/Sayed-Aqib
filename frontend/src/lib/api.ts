@@ -47,3 +47,48 @@ export function getUnitEconomicsSummary(params?: { start?: string; end?: string 
   const qs = search.toString();
   return getJSON(`/api/unit-economics/summary${qs ? `?${qs}` : ""}`);
 }
+
+export interface ShopifyFunnel {
+  sessions: number;
+  added_to_cart: number;
+  reached_checkout: number;
+  completed_checkout: number;
+  added_to_cart_rate: number;
+  reached_checkout_rate: number;
+  completed_checkout_rate: number;
+  drop_off_sessions_to_cart: number;
+  drop_off_cart_to_checkout: number;
+  drop_off_checkout_to_purchase: number;
+  low_confidence: boolean;
+}
+
+export interface ShopifyReferrerSplit {
+  paid_sessions: number;
+  organic_sessions: number;
+  paid_share: number;
+}
+
+export interface AmazonProductFunnel {
+  product_id: string;
+  name: string;
+  sessions: number;
+  units_ordered: number;
+  unit_session_pct: number;
+  low_confidence: boolean;
+}
+
+export interface FunnelSummary {
+  start: string;
+  end: string;
+  shopify: ShopifyFunnel;
+  shopify_referrer: ShopifyReferrerSplit;
+  amazon: AmazonProductFunnel[];
+}
+
+export function getFunnelSummary(params?: { start?: string; end?: string }): Promise<FunnelSummary> {
+  const search = new URLSearchParams();
+  if (params?.start) search.set("start", params.start);
+  if (params?.end) search.set("end", params.end);
+  const qs = search.toString();
+  return getJSON(`/api/funnel/summary${qs ? `?${qs}` : ""}`);
+}

@@ -13,6 +13,7 @@ import duckdb
 import pandas as pd
 
 from backend.api import repo
+from backend.metrics.funnel import amazon_funnel_by_product, shopify_funnel, shopify_referrer_split
 from backend.metrics.unit_economics import (
     amazon_sku_day_economics,
     apply_ad_spend,
@@ -85,4 +86,39 @@ def unit_economics_summary(
         "end": end.isoformat(),
         "channels": channels.to_dict(orient="records"),
         "skus": sku_df.to_dict(orient="records") if not sku_df.empty else [],
+    }
+
+
+# A funnel step is a count of conversions, not revenue — 3 conversions is
+# the brief's own bar for "don't trust this number yet" in that context,
+# distinct from the 30-order bar used for revenue confidence above.
+FUNNEL_MIN_SAMPLE = 3
+
+
+def funnel_summary(con: duckdb.DuckDBPyConnection, start: date, end: date) -> dict:
+    products = repo.get_products(con)
+    product_names = dict(zip(products["product_id"], products["name"]))
+
+    funnel_df = repo.get_shopify_funnel_daily(con, start, end)
+    referrer_df = repo.get_shopify_referrer_sessions(con, start, end)
+    traffic_df = repo.get_amazon_traffic(con, start, end)
+
+    shopify = shopify_funnel(funnel_df, min_sample=FUNNEL_MIN_SAMPLE)
+    referrer = shopify_referrer_split(referrer_df) if not referrer_df.empty else {
+        "paid_sessions": 0, "organic_sessions": 0, "paid_share": 0.0,
+    }
+
+    if not traffic_df.empty:
+        amazon_df = amazon_funnel_by_product(traffic_df, min_sample=FUNNEL_MIN_SAMPLE)
+        amazon_df["name"] = amazon_df["product_id"].map(product_names).fillna(amazon_df["product_id"])
+        amazon = amazon_df.to_dict(orient="records")
+    else:
+        amazon = []
+
+    return {
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "shopify": shopify,
+        "shopify_referrer": referrer,
+        "amazon": amazon,
     }

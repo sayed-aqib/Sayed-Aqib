@@ -110,6 +110,14 @@ class SessionReferrerRow(_Row):
     sessions: int = Field(alias="Sessions")
 
 
+class ShopifyFunnelDailyRow(_Row):
+    date_raw: str = Field(alias="Date")
+    sessions: int = Field(default=0, alias="Sessions")
+    added_to_cart: int = Field(default=0, alias="Added to Cart")
+    reached_checkout: int = Field(default=0, alias="Reached Checkout")
+    completed_checkout: int = Field(default=0, alias="Completed Checkout")
+
+
 class AbandonedCheckoutRow(_Row):
     checkout_id: str = Field(alias="Checkout ID")
     created_at_raw: str = Field(alias="Created at")

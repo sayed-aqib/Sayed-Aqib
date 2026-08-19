@@ -38,6 +38,7 @@ def test_all_sources_produce_nonempty_files(tmp_path):
         "shopify_orders/orders_export.csv",
         "shopify_customers/customers_export.csv",
         "shopify_sessions_daily/sessions_by_day.csv",
+        "shopify_funnel_daily/funnel_by_day.csv",
         "shopify_sessions_referrer/sessions_by_referrer.csv",
         "shopify_abandoned_checkouts/abandoned_checkouts.csv",
         "amazon_detail_page_sales_traffic/detail_page_sales_traffic.csv",
