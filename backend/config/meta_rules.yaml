@@ -1,0 +1,40 @@
+# Budget recommendation rules for the Meta Ads module. Rules, not a model —
+# see CLAUDE.md. Every number here is a threshold a human chose and can
+# change; nothing about "what to recommend" is learned from data.
+#
+# Evaluated in this order per adset, on a rolling 7-day window:
+#   1. too_new            — guardrail, always checked first
+#   2. insufficient_data
+#   3. scale
+#   4. hold (within tolerance band)
+#   5. pause
+#   6. cut
+#   7. hold (fallback — below breakeven but not enough purchases to act on)
+
+insufficient_data:
+  min_purchases: 3
+  min_spend: 3000.0
+
+scale:
+  roas_multiple_of_breakeven: 1.2
+  budget_change_pct: 0.20
+
+hold_band:
+  roas_tolerance_pct: 0.20   # within +/-20% of breakeven counts as "at target"
+
+cut:
+  min_purchases: 3
+  budget_change_pct: -0.30   # the guardrail below may cap what's actually shown
+
+pause:
+  roas_multiple_of_breakeven: 0.5
+  min_purchases: 5
+
+guardrails:
+  max_budget_change_pct: 0.25
+  min_days_between_changes: 3
+  min_days_live_before_recommendation: 7
+
+creative_fatigue:
+  min_frequency: 2.5
+  ctr_drop_from_peak_pct: 0.30

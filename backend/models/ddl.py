@@ -155,6 +155,7 @@ DDL_STATEMENTS = [
         frequency      DOUBLE,
         reach          INTEGER,
         acos_pct       DOUBLE,
+        new_customers  INTEGER,
         source_file    VARCHAR NOT NULL,
         PRIMARY KEY (date, platform, campaign_name, adset_name)
     )

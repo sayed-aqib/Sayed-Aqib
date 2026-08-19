@@ -675,6 +675,7 @@ def gen_meta_ads_insights(start: date, days: int, rng: random.Random) -> tuple[l
         "Reporting starts", "Campaign name", "Ad set name", "Amount spent (INR)",
         "Impressions", "Reach", "Frequency", "CPM (cost per 1,000 impressions) (INR)",
         "Clicks (all)", "CTR (all)", "Purchases", "Purchases conversion value (INR)",
+        "New Customers",
     ]
     rows = []
     # give each adset a stable "peak CTR" so fatigue can be computed from its own history
@@ -701,6 +702,9 @@ def gen_meta_ads_insights(start: date, days: int, rng: random.Random) -> tuple[l
                 purchase_rate = rng.uniform(0.01, 0.05) if "Retargeting" in camp else rng.uniform(0.005, 0.02)
                 purchases = poisson(clicks * purchase_rate, rng)
                 value = round(purchases * rng.choice([999.0, 349.0, 1799.0]), 2)
+                # prospecting brings in new buyers; retargeting mostly re-sells existing ones
+                new_customer_rate = rng.uniform(0.6, 0.85) if "Prospecting" in camp else rng.uniform(0.05, 0.25)
+                new_customers = min(purchases, poisson(purchases * new_customer_rate, rng))
                 rows.append({
                     "Reporting starts": day.isoformat(),
                     "Campaign name": camp,
@@ -714,6 +718,7 @@ def gen_meta_ads_insights(start: date, days: int, rng: random.Random) -> tuple[l
                     "CTR (all)": round(ctr * 100, 3),
                     "Purchases": purchases,
                     "Purchases conversion value (INR)": value,
+                    "New Customers": new_customers,
                 })
     return fieldnames, rows
 

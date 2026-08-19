@@ -219,3 +219,4 @@ class MetaAdsRow(_Row):
     ctr_pct: float = Field(default=0.0, alias="CTR (all)")
     purchases: int = Field(default=0, alias="Purchases")
     revenue: float = Field(default=0.0, alias="Purchases conversion value (INR)")
+    new_customers: int = Field(default=0, alias="New Customers")

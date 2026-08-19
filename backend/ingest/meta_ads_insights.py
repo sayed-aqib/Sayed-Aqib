@@ -14,7 +14,7 @@ SOURCE = "meta_ads_insights"
 COLUMNS = [
     "date", "platform", "campaign_name", "adset_name", "impressions", "clicks",
     "spend", "purchases", "revenue", "ctr_pct", "cpc", "cpm", "frequency",
-    "reach", "acos_pct", "source_file",
+    "reach", "acos_pct", "new_customers", "source_file",
 ]
 
 
@@ -36,7 +36,7 @@ def ingest_meta_ads_insights(con: duckdb.DuckDBPyConnection, path: Path) -> Inge
             parse_flexible_date(r.date_raw).date(), "meta", r.campaign_name, r.adset_name,
             r.impressions, r.clicks, r.spend, r.purchases, r.revenue, r.ctr_pct,
             (r.spend / r.clicks) if r.clicks else None, r.cpm, r.frequency, r.reach, None,
-            file_label,
+            r.new_customers, file_label,
         )
         for r in valid_rows
     ]

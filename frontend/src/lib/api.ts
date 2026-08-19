@@ -164,3 +164,50 @@ export function getKeywordsSummary(params?: { start?: string; end?: string }): P
   const qs = search.toString();
   return getJSON(`/api/keywords/summary${qs ? `?${qs}` : ""}`);
 }
+
+export interface BreakevenEconomics {
+  contribution_margin_ratio: number;
+  breakeven_roas: number | null;
+  allowable_cpa: number;
+  sample_size: number;
+}
+
+export type MetaRule = "scale" | "hold" | "cut" | "pause" | "insufficient_data" | "too_new";
+
+export interface AdsetRecommendation {
+  campaign_name: string;
+  adset_name: string;
+  days_live: number;
+  spend_7d: number;
+  purchases_7d: number;
+  revenue_7d: number;
+  roas_7d: number;
+  cpa_7d: number | null;
+  cpm_7d: number;
+  ctr_7d: number;
+  frequency_7d: number;
+  new_customer_share_7d: number;
+  spend_28d: number | null;
+  roas_28d: number | null;
+  is_fatigued: boolean;
+  rule: MetaRule;
+  recommended_change_pct: number | null;
+  capped_from_pct: number | null;
+  reasoning: string;
+  confidence: "low" | "medium" | "high";
+}
+
+export interface MetaAdsSummary {
+  as_of: string;
+  breakeven: BreakevenEconomics;
+  blended_mer: number | null;
+  platform_roas_28d: number | null;
+  adsets: AdsetRecommendation[];
+}
+
+export function getMetaAdsSummary(params?: { as_of?: string }): Promise<MetaAdsSummary> {
+  const search = new URLSearchParams();
+  if (params?.as_of) search.set("as_of", params.as_of);
+  const qs = search.toString();
+  return getJSON(`/api/meta-ads/summary${qs ? `?${qs}` : ""}`);
+}

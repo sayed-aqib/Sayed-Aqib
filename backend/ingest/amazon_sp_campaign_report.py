@@ -19,7 +19,7 @@ SOURCE = "amazon_sp_campaign_report"
 COLUMNS = [
     "date", "platform", "campaign_name", "adset_name", "impressions", "clicks",
     "spend", "purchases", "revenue", "ctr_pct", "cpc", "cpm", "frequency",
-    "reach", "acos_pct", "source_file",
+    "reach", "acos_pct", "new_customers", "source_file",
 ]
 
 
@@ -40,7 +40,7 @@ def ingest_sp_campaign_report(con: duckdb.DuckDBPyConnection, path: Path) -> Ing
         (
             parse_flexible_date(r.date_raw).date(), "amazon", r.campaign_name, "(campaign level)",
             r.impressions, r.clicks, r.spend, r.orders, r.sales, r.ctr, r.cpc,
-            None, None, None, r.acos, file_label,
+            None, None, None, r.acos, None, file_label,
         )
         for r in valid_rows
     ]

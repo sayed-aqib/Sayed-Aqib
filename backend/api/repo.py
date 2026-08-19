@@ -95,6 +95,31 @@ def get_ad_spend_total(con: duckdb.DuckDBPyConnection, platform: str, start: dat
     return float(row[0])
 
 
+def get_ad_spend_daily_rows(con: duckdb.DuckDBPyConnection, platform: str, start: date, end: date) -> pd.DataFrame:
+    return con.execute(
+        """
+        SELECT date, campaign_name, adset_name, spend, impressions, clicks,
+               purchases, revenue, frequency, new_customers
+        FROM ad_spend_daily
+        WHERE platform = ? AND date >= ? AND date < ?
+        """,
+        [platform, start, end],
+    ).df()
+
+
+def get_adset_first_seen(con: duckdb.DuckDBPyConnection, platform: str) -> dict[tuple[str, str], date]:
+    rows = con.execute(
+        """
+        SELECT campaign_name, adset_name, MIN(date) AS first_seen
+        FROM ad_spend_daily
+        WHERE platform = ?
+        GROUP BY campaign_name, adset_name
+        """,
+        [platform],
+    ).fetchall()
+    return {(r[0], r[1]): r[2] for r in rows}
+
+
 def get_products(con: duckdb.DuckDBPyConnection) -> pd.DataFrame:
     return con.execute("SELECT product_id, name, channels, list_price FROM products").df()
 

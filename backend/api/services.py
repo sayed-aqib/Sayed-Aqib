@@ -15,6 +15,13 @@ import pandas as pd
 from backend.api import repo
 from backend.metrics.funnel import amazon_funnel_by_product, shopify_funnel, shopify_referrer_split
 from backend.metrics.keywords import classify_search_queries
+from backend.metrics.meta_ads import (
+    breakeven_economics,
+    creative_fatigue_flags,
+    load_meta_rules,
+    recommend_budget_actions,
+    rolling_adset_metrics,
+)
 from backend.metrics.retention import (
     cross_sell_from_chukku,
     customer_purchase_sequence,
@@ -34,6 +41,7 @@ from backend.metrics.unit_economics import (
 
 CONFIG_DIR = Path(__file__).resolve().parents[1] / "config"
 DEFAULT_COSTS_PATH = CONFIG_DIR / "costs.yaml"
+DEFAULT_META_RULES_PATH = CONFIG_DIR / "meta_rules.yaml"
 
 EMPTY_ECON_COLS = [
     "product_id", "net_revenue", "cogs", "packaging", "shipping", "fees",
@@ -178,4 +186,95 @@ def keywords_summary(con: duckdb.DuckDBPyConnection, start: date, end: date) -> 
         "start": start.isoformat(),
         "end": end.isoformat(),
         "queries": classified.to_dict(orient="records"),
+    }
+
+
+def meta_ads_summary(
+    con: duckdb.DuckDBPyConnection,
+    as_of: date,
+    costs_path: str | Path = DEFAULT_COSTS_PATH,
+    rules_path: str | Path = DEFAULT_META_RULES_PATH,
+) -> dict:
+    rules = load_meta_rules(rules_path)
+    window_7_start = as_of - timedelta(days=7)
+    window_28_start = as_of - timedelta(days=28)
+    fatigue_lookback_start = as_of - timedelta(days=60)
+
+    daily_7 = repo.get_ad_spend_daily_rows(con, "meta", window_7_start, as_of)
+    daily_28 = repo.get_ad_spend_daily_rows(con, "meta", window_28_start, as_of)
+    daily_fatigue = repo.get_ad_spend_daily_rows(con, "meta", fatigue_lookback_start, as_of)
+
+    if daily_7.empty:
+        return {
+            "as_of": as_of.isoformat(),
+            "breakeven": {"contribution_margin_ratio": 0.0, "breakeven_roas": None, "allowable_cpa": 0.0, "sample_size": 0},
+            "blended_mer": None,
+            "platform_roas_28d": None,
+            "adsets": [],
+        }
+
+    costs = load_costs_config(costs_path)
+    orders_28, items_28 = repo.get_shopify_orders_and_items(con, window_28_start, as_of)
+    if not items_28.empty:
+        order_econ_28 = (
+            shopify_line_economics(orders_28, items_28, costs)
+            .groupby("order_id")[["net_revenue", "contribution_before_ad_spend"]]
+            .sum()
+            .reset_index()
+        )
+    else:
+        order_econ_28 = pd.DataFrame(columns=["order_id", "net_revenue", "contribution_before_ad_spend"])
+    breakeven = breakeven_economics(order_econ_28)
+
+    metrics_7d = rolling_adset_metrics(daily_7)
+    metrics_28d = rolling_adset_metrics(daily_28).set_index(["campaign_name", "adset_name"])
+    fatigue = creative_fatigue_flags(daily_fatigue, rules).set_index(["campaign_name", "adset_name"])
+    adset_first_seen = repo.get_adset_first_seen(con, "meta")
+    adset_age_days = {k: (as_of - v).days for k, v in adset_first_seen.items()}
+
+    recommendations = recommend_budget_actions(metrics_7d, breakeven, rules, adset_age_days).set_index(
+        ["campaign_name", "adset_name"]
+    )
+
+    total_spend_28d = float(daily_28["spend"].sum())
+    total_revenue_28d_platform = float(daily_28["revenue"].sum())
+    shopify_revenue_28d = float(order_econ_28["net_revenue"].sum())
+    blended_mer = (shopify_revenue_28d / total_spend_28d) if total_spend_28d else None
+    platform_roas_28d = (total_revenue_28d_platform / total_spend_28d) if total_spend_28d else None
+
+    adsets = []
+    for _, row in metrics_7d.iterrows():
+        key = (row["campaign_name"], row["adset_name"])
+        rec = recommendations.loc[key]
+        fat = fatigue.loc[key] if key in fatigue.index else None
+        m28 = metrics_28d.loc[key] if key in metrics_28d.index else None
+        adsets.append({
+            "campaign_name": row["campaign_name"],
+            "adset_name": row["adset_name"],
+            "days_live": adset_age_days.get(key, 0),
+            "spend_7d": float(row["spend"]),
+            "purchases_7d": int(row["purchases"]),
+            "revenue_7d": float(row["revenue"]),
+            "roas_7d": float(row["roas"]),
+            "cpa_7d": None if pd.isna(row["cpa"]) else float(row["cpa"]),
+            "cpm_7d": float(row["cpm"]),
+            "ctr_7d": float(row["ctr"]),
+            "frequency_7d": float(row["frequency"]),
+            "new_customer_share_7d": float(row["new_customer_share"]),
+            "spend_28d": float(m28["spend"]) if m28 is not None else None,
+            "roas_28d": float(m28["roas"]) if m28 is not None else None,
+            "is_fatigued": bool(fat["is_fatigued"]) if fat is not None else False,
+            "rule": rec["rule"],
+            "recommended_change_pct": None if pd.isna(rec["recommended_change_pct"]) else float(rec["recommended_change_pct"]),
+            "capped_from_pct": None if pd.isna(rec["capped_from_pct"]) else float(rec["capped_from_pct"]),
+            "reasoning": rec["reasoning"],
+            "confidence": rec["confidence"],
+        })
+
+    return {
+        "as_of": as_of.isoformat(),
+        "breakeven": breakeven,
+        "blended_mer": blended_mer,
+        "platform_roas_28d": platform_roas_28d,
+        "adsets": adsets,
     }
