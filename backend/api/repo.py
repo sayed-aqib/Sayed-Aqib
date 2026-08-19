@@ -76,6 +76,17 @@ def get_shopify_referrer_sessions(con: duckdb.DuckDBPyConnection, start: date, e
     ).df()
 
 
+def get_search_query_weekly(con: duckdb.DuckDBPyConnection, start: date, end: date) -> pd.DataFrame:
+    return con.execute(
+        """
+        SELECT week_start, search_query, impressions, clicks, cart_adds, purchases
+        FROM search_query_weekly
+        WHERE week_start >= ? AND week_start < ?
+        """,
+        [start, end],
+    ).df()
+
+
 def get_ad_spend_total(con: duckdb.DuckDBPyConnection, platform: str, start: date, end: date) -> float:
     row = con.execute(
         "SELECT COALESCE(SUM(spend), 0) FROM ad_spend_daily WHERE platform = ? AND date >= ? AND date < ?",

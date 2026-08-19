@@ -14,6 +14,7 @@ import pandas as pd
 
 from backend.api import repo
 from backend.metrics.funnel import amazon_funnel_by_product, shopify_funnel, shopify_referrer_split
+from backend.metrics.keywords import classify_search_queries
 from backend.metrics.retention import (
     cross_sell_from_chukku,
     customer_purchase_sequence,
@@ -164,4 +165,17 @@ def retention_summary(con: duckdb.DuckDBPyConnection) -> dict:
         "reorder_gap": reorder_gap_stats(seq, min_sample=3),
         "cohorts": monthly_cohorts(orders_df).to_dict(orient="records"),
         "cross_sell_from_chukku": cross_sell_from_chukku(seq, orders_df, items_df, min_sample=3),
+    }
+
+
+def keywords_summary(con: duckdb.DuckDBPyConnection, start: date, end: date) -> dict:
+    df = repo.get_search_query_weekly(con, start, end)
+    if df.empty:
+        return {"start": start.isoformat(), "end": end.isoformat(), "queries": []}
+
+    classified = classify_search_queries(df).sort_values("impressions", ascending=False)
+    return {
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "queries": classified.to_dict(orient="records"),
     }

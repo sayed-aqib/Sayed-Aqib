@@ -136,3 +136,31 @@ export interface RetentionSummary {
 export function getRetentionSummary(): Promise<RetentionSummary> {
   return getJSON("/api/retention/summary");
 }
+
+export interface SearchQueryRow {
+  search_query: string;
+  impressions: number;
+  clicks: number;
+  cart_adds: number;
+  purchases: number;
+  click_rate: number;
+  purchase_rate: number;
+  impression_share: number;
+  conversion_share: number;
+  issue: "healthy" | "listing_or_image_problem" | "price_or_review_problem";
+  low_confidence: boolean;
+}
+
+export interface KeywordsSummary {
+  start: string;
+  end: string;
+  queries: SearchQueryRow[];
+}
+
+export function getKeywordsSummary(params?: { start?: string; end?: string }): Promise<KeywordsSummary> {
+  const search = new URLSearchParams();
+  if (params?.start) search.set("start", params.start);
+  if (params?.end) search.set("end", params.end);
+  const qs = search.toString();
+  return getJSON(`/api/keywords/summary${qs ? `?${qs}` : ""}`);
+}
