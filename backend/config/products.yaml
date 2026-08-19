@@ -14,7 +14,7 @@ products:
     list_price: 999.0
 
   - product_id: CK-2PK
-    name: Chukku Kappi Powder (2 x 150g)
+    name: Chukku Kappi Powder (150g)
     channels: [shopify]
     list_price: 349.0
 

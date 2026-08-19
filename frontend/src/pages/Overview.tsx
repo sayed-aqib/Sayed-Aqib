@@ -144,7 +144,7 @@ const PRODUCTS = [
   {
     src: "chukku-kaappi-powder.png",
     name: "Chukku Kappi Powder",
-    note: "2 x 150g · Shopify",
+    note: "150g · Shopify",
     accent: "#9C6B2E",
     productIds: ["CK-2PK"],
   },

@@ -8,7 +8,7 @@ Hayah Care is a small D2C food brand in Kozhikode, Kerala, roughly six months in
 |---|---|---|
 | Nuts & Seeds Supermix 400g | Shopify + Amazon | ₹999 |
 | Mom's Supermix 400g | Shopify + Amazon | ₹999 |
-| Chukku Kappi Powder (2 x 150g) | Shopify | ₹349 |
+| Chukku Kappi Powder (150g) | Shopify | ₹349 |
 
 An 830g Supermix also sells on Amazon. The founder is not an analyst. Every screen has to answer a question she would actually ask out loud, in words she already uses.
 
