@@ -6,7 +6,7 @@ response.
 
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import duckdb
@@ -14,6 +14,14 @@ import pandas as pd
 
 from backend.api import repo
 from backend.metrics.funnel import amazon_funnel_by_product, shopify_funnel, shopify_referrer_split
+from backend.metrics.retention import (
+    cross_sell_from_chukku,
+    customer_purchase_sequence,
+    monthly_cohorts,
+    reorder_gap_stats,
+    repeat_purchase_rate,
+    repeat_purchase_rate_by_first_sku,
+)
 from backend.metrics.unit_economics import (
     amazon_sku_day_economics,
     apply_ad_spend,
@@ -121,4 +129,39 @@ def funnel_summary(con: duckdb.DuckDBPyConnection, start: date, end: date) -> di
         "shopify": shopify,
         "shopify_referrer": referrer,
         "amazon": amazon,
+    }
+
+
+def retention_summary(con: duckdb.DuckDBPyConnection) -> dict:
+    """Runs over the warehouse's full order history, not a date window —
+    truncating would corrupt "first order" detection for anyone whose first
+    order falls outside an arbitrary range. Shopify only; see
+    backend/metrics/retention.py for why Amazon can't be included."""
+    min_d, max_d = repo.get_warehouse_date_bounds(con)
+    if min_d is None:
+        return {
+            "has_data": False,
+            "overall": {"sample_size": 0, "repeat_customers": 0, "repeat_rate": 0.0, "low_confidence": True},
+            "by_first_sku": [],
+            "reorder_gap": {"sample_size": 0, "median_days": None, "low_confidence": True},
+            "cohorts": [],
+            "cross_sell_from_chukku": {"cohort_size": 0, "converted": 0, "conversion_rate": 0.0, "low_confidence": True},
+        }
+
+    products = repo.get_products(con)
+    product_names = dict(zip(products["product_id"], products["name"]))
+
+    orders_df, items_df = repo.get_shopify_orders_and_items(con, min_d, max_d + timedelta(days=1))
+    seq = customer_purchase_sequence(orders_df, items_df)
+
+    by_sku = repeat_purchase_rate_by_first_sku(seq, min_sample=3)
+    by_sku["name"] = by_sku["first_sku"].map(product_names).fillna(by_sku["first_sku"])
+
+    return {
+        "has_data": True,
+        "overall": repeat_purchase_rate(seq, min_sample=30),
+        "by_first_sku": by_sku.to_dict(orient="records"),
+        "reorder_gap": reorder_gap_stats(seq, min_sample=3),
+        "cohorts": monthly_cohorts(orders_df).to_dict(orient="records"),
+        "cross_sell_from_chukku": cross_sell_from_chukku(seq, orders_df, items_df, min_sample=3),
     }

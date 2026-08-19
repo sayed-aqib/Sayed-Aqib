@@ -92,3 +92,47 @@ export function getFunnelSummary(params?: { start?: string; end?: string }): Pro
   const qs = search.toString();
   return getJSON(`/api/funnel/summary${qs ? `?${qs}` : ""}`);
 }
+
+export interface RepeatRateStat {
+  sample_size: number;
+  repeat_customers: number;
+  repeat_rate: number;
+  low_confidence: boolean;
+}
+
+export interface RepeatRateBySku extends RepeatRateStat {
+  first_sku: string;
+  name: string;
+}
+
+export interface ReorderGapStat {
+  sample_size: number;
+  median_days: number | null;
+  low_confidence: boolean;
+}
+
+export interface CohortRow {
+  cohort_month: string;
+  months_since_first: number;
+  order_count: number;
+}
+
+export interface CrossSellStat {
+  cohort_size: number;
+  converted: number;
+  conversion_rate: number;
+  low_confidence: boolean;
+}
+
+export interface RetentionSummary {
+  has_data: boolean;
+  overall: RepeatRateStat;
+  by_first_sku: RepeatRateBySku[];
+  reorder_gap: ReorderGapStat;
+  cohorts: CohortRow[];
+  cross_sell_from_chukku: CrossSellStat;
+}
+
+export function getRetentionSummary(): Promise<RetentionSummary> {
+  return getJSON("/api/retention/summary");
+}
