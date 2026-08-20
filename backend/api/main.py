@@ -1,6 +1,11 @@
 """FastAPI app entrypoint.
 
-    uvicorn backend.api.main:app --reload
+    uvicorn backend.api.main:app --reload --port 8010
+
+Port fixed at 8010 (not the uvicorn/FastAPI default of 8000) to avoid
+colliding with other local projects on this machine that also default to
+8000 -- update the frontend's vite.config.ts proxy target and the
+allow_origins list below together if this ever changes.
 """
 
 from __future__ import annotations
@@ -30,7 +35,7 @@ app = FastAPI(title="Hayah Care Growth Analytics", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=["http://localhost:5180", "http://127.0.0.1:5180"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
