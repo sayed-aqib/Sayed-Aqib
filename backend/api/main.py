@@ -11,7 +11,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from backend.api.routers import funnel, keywords, meta_ads, retention, unit_economics
+from backend.api.routers import costs, funnel, keywords, meta_ads, retention, unit_economics
 from backend.models.ddl import connect
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -40,6 +40,7 @@ app.include_router(funnel.router)
 app.include_router(retention.router)
 app.include_router(keywords.router)
 app.include_router(meta_ads.router)
+app.include_router(costs.router)
 
 
 @app.get("/api/health")

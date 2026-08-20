@@ -40,6 +40,18 @@ async function getJSON<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+async function postJSON<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    throw new Error(`${path} failed: ${res.status} ${res.statusText}`);
+  }
+  return res.json() as Promise<T>;
+}
+
 export function getUnitEconomicsSummary(params?: { start?: string; end?: string }): Promise<UnitEconomicsSummary> {
   const search = new URLSearchParams();
   if (params?.start) search.set("start", params.start);
@@ -210,4 +222,35 @@ export function getMetaAdsSummary(params?: { as_of?: string }): Promise<MetaAdsS
   if (params?.as_of) search.set("as_of", params.as_of);
   const qs = search.toString();
   return getJSON(`/api/meta-ads/summary${qs ? `?${qs}` : ""}`);
+}
+
+export interface CostVersion {
+  effective_date: string;
+  cogs_per_unit: Record<string, number>;
+  packaging_per_unit: Record<string, number>;
+  shipping_shopify_per_order: number;
+  shopify_gateway_pct: number;
+  shopify_gateway_fixed: number;
+  amazon_referral_pct: number;
+  amazon_fba_per_unit: number;
+  returns_provision_pct: Record<string, number>;
+}
+
+export interface ProductRef {
+  product_id: string;
+  name: string;
+}
+
+export interface CostsSummary {
+  versions: CostVersion[];
+  current_effective_date: string;
+  products: ProductRef[];
+}
+
+export function getCostsSummary(): Promise<CostsSummary> {
+  return getJSON("/api/costs");
+}
+
+export function saveCostVersion(version: CostVersion): Promise<CostsSummary> {
+  return postJSON("/api/costs/versions", version);
 }

@@ -5,7 +5,8 @@ import { Funnel } from "./pages/Funnel";
 import { Retention } from "./pages/Retention";
 import { Keywords } from "./pages/Keywords";
 import { MetaAds } from "./pages/MetaAds";
-import { CoinsIcon, FunnelIcon, MegaphoneIcon, OverviewIcon, RetentionIcon, SearchIcon } from "./components/icons";
+import { Settings } from "./pages/Settings";
+import { CoinsIcon, FunnelIcon, GearIcon, MegaphoneIcon, OverviewIcon, RetentionIcon, SearchIcon } from "./components/icons";
 
 const PAGES = {
   overview: { label: "Overview", component: Overview, icon: OverviewIcon },
@@ -14,6 +15,7 @@ const PAGES = {
   retention: { label: "Retention", component: Retention, icon: RetentionIcon },
   keywords: { label: "Amazon Keywords", component: Keywords, icon: SearchIcon },
   "meta-ads": { label: "Meta Ads", component: MetaAds, icon: MegaphoneIcon },
+  settings: { label: "Costs", component: Settings, icon: GearIcon },
 } as const;
 
 type PageKey = keyof typeof PAGES;

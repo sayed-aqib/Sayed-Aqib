@@ -31,12 +31,14 @@ from backend.metrics.retention import (
     repeat_purchase_rate_by_first_sku,
 )
 from backend.metrics.unit_economics import (
+    CostVersion,
     amazon_sku_day_economics,
     apply_ad_spend,
     channel_summary,
     load_costs_config,
     rollup,
     shopify_line_economics,
+    upsert_cost_version,
 )
 
 CONFIG_DIR = Path(__file__).resolve().parents[1] / "config"
@@ -104,6 +106,40 @@ def unit_economics_summary(
         "channels": channels.to_dict(orient="records"),
         "skus": sku_df.to_dict(orient="records") if not sku_df.empty else [],
     }
+
+
+def _cost_version_out(v: CostVersion) -> dict:
+    return {
+        "effective_date": v.effective_date.isoformat(),
+        "cogs_per_unit": v.cogs_per_unit,
+        "packaging_per_unit": v.packaging_per_unit,
+        "shipping_shopify_per_order": v.shipping_shopify_per_order,
+        "shopify_gateway_pct": v.shopify_gateway_pct,
+        "shopify_gateway_fixed": v.shopify_gateway_fixed,
+        "amazon_referral_pct": v.amazon_referral_pct,
+        "amazon_fba_per_unit": v.amazon_fba_per_unit,
+        "returns_provision_pct": v.returns_provision_pct,
+    }
+
+
+def costs_summary(con: duckdb.DuckDBPyConnection, costs_path: str | Path = DEFAULT_COSTS_PATH) -> dict:
+    costs = load_costs_config(costs_path)
+    products = repo.get_products(con)
+    today = date.today()
+    return {
+        "versions": [_cost_version_out(v) for v in costs.versions],
+        "current_effective_date": costs.for_date(today).effective_date.isoformat(),
+        "products": products[["product_id", "name"]].to_dict(orient="records"),
+    }
+
+
+def save_cost_version(
+    con: duckdb.DuckDBPyConnection,
+    version: CostVersion,
+    costs_path: str | Path = DEFAULT_COSTS_PATH,
+) -> dict:
+    upsert_cost_version(costs_path, version)
+    return costs_summary(con, costs_path)
 
 
 # A funnel step is a count of conversions, not revenue — 3 conversions is

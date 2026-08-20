@@ -57,3 +57,12 @@ export function MegaphoneIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function GearIcon({ className }: IconProps) {
+  return (
+    <svg {...common} className={className}>
+      <circle cx="9" cy="9" r="2.5" />
+      <path d="M9 2.8v1.6M9 13.6v1.6M15.2 9h-1.6M4.4 9H2.8M13.15 4.85l-1.13 1.13M5.98 12.02l-1.13 1.13M13.15 13.15l-1.13-1.13M5.98 5.98 4.85 4.85" />
+    </svg>
+  );
+}

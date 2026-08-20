@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from backend.metrics.unit_economics import (
+    CostVersion,
     amazon_sku_day_economics,
     apply_ad_spend,
     channel_summary,
@@ -11,6 +12,7 @@ from backend.metrics.unit_economics import (
     rollup,
     shopify_line_economics,
     shopify_order_economics,
+    upsert_cost_version,
 )
 
 COSTS_PATH = "backend/config/costs.yaml"
@@ -47,6 +49,44 @@ def test_costs_config_a_new_version_does_not_change_the_past():
     assert march_version.cogs_per_unit["NSS-400"] == 320.0
     july_version = costs.for_date(date(2026, 7, 1))
     assert july_version.cogs_per_unit["NSS-400"] == 999.0
+
+
+def _new_version(effective_date: date, nss_cogs: float) -> CostVersion:
+    return CostVersion(
+        effective_date=effective_date,
+        cogs_per_unit={"NSS-400": nss_cogs},
+        packaging_per_unit={"NSS-400": 25.0},
+        shipping_shopify_per_order=90.0,
+        shopify_gateway_pct=0.02,
+        shopify_gateway_fixed=3.0,
+        amazon_referral_pct=0.15,
+        amazon_fba_per_unit=65.0,
+        returns_provision_pct={"shopify": 0.02, "amazon": 0.04},
+    )
+
+
+def test_upsert_cost_version_appends_and_preserves_history(tmp_path):
+    dest = tmp_path / "costs.yaml"
+    dest.write_text(open(COSTS_PATH, encoding="utf-8").read(), encoding="utf-8")
+
+    updated = upsert_cost_version(dest, _new_version(date(2026, 6, 1), 999.0))
+
+    assert [v.effective_date for v in updated.versions] == [date(2026, 1, 1), date(2026, 6, 1)]
+    assert updated.for_date(date(2026, 3, 1)).cogs_per_unit["NSS-400"] == 320.0
+    assert updated.for_date(date(2026, 7, 1)).cogs_per_unit["NSS-400"] == 999.0
+    # the file's explanatory header survives a save
+    assert "Costs Hayah Care actually pays" in dest.read_text(encoding="utf-8")
+
+
+def test_upsert_cost_version_same_effective_date_replaces_not_duplicates(tmp_path):
+    dest = tmp_path / "costs.yaml"
+    dest.write_text(open(COSTS_PATH, encoding="utf-8").read(), encoding="utf-8")
+
+    upsert_cost_version(dest, _new_version(date(2026, 6, 1), 999.0))
+    updated = upsert_cost_version(dest, _new_version(date(2026, 6, 1), 500.0))
+
+    assert len(updated.versions) == 2
+    assert updated.for_date(date(2026, 7, 1)).cogs_per_unit["NSS-400"] == 500.0
 
 
 def _orders_df(rows: list[dict]) -> pd.DataFrame:

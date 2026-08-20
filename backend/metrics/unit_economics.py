@@ -73,6 +73,43 @@ def load_costs_config(path: str | Path) -> CostsConfig:
     return CostsConfig(versions=versions)
 
 
+def upsert_cost_version(path: str | Path, version: CostVersion) -> CostsConfig:
+    """Add ``version`` to costs.yaml, or replace the existing version with the
+    same ``effective_date`` (so re-saving a same-day edit doesn't pile up
+    duplicate entries). The file's leading comment header is preserved
+    verbatim; per-version inline comments are not, since they're rewritten
+    from the dataclass on every save."""
+    path = Path(path)
+    raw = path.read_text(encoding="utf-8")
+    header = raw[: raw.index("versions:")]
+
+    existing = load_costs_config(path)
+    versions = [v for v in existing.versions if v.effective_date != version.effective_date]
+    versions.append(version)
+    versions.sort(key=lambda v: v.effective_date)
+
+    body = {
+        "versions": [
+            {
+                "effective_date": v.effective_date,
+                "cogs_per_unit": v.cogs_per_unit,
+                "packaging_per_unit": v.packaging_per_unit,
+                "shipping_shopify_per_order": v.shipping_shopify_per_order,
+                "fees": {
+                    "shopify_gateway_pct": v.shopify_gateway_pct,
+                    "shopify_gateway_fixed": v.shopify_gateway_fixed,
+                    "amazon_referral_pct": v.amazon_referral_pct,
+                    "amazon_fba_per_unit": v.amazon_fba_per_unit,
+                },
+                "returns_provision_pct": v.returns_provision_pct,
+            }
+            for v in versions
+        ]
+    }
+    path.write_text(header + yaml.dump(body, sort_keys=False, default_flow_style=False), encoding="utf-8")
+    return load_costs_config(path)
+
+
 def shopify_line_economics(orders_df: pd.DataFrame, items_df: pd.DataFrame, costs: CostsConfig) -> pd.DataFrame:
     """Per order_item row. Order-level shared costs (shipping, gateway fees,
     discount) are allocated across a Shopify order's non-refund lines
