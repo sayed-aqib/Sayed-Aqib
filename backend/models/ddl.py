@@ -90,6 +90,8 @@ DDL_STATEMENTS = [
     CREATE TABLE IF NOT EXISTS shopify_funnel_daily (
         date                DATE PRIMARY KEY,
         sessions            INTEGER,
+        home_page_views     INTEGER,
+        product_page_views  INTEGER,
         added_to_cart       INTEGER,
         reached_checkout    INTEGER,
         completed_checkout  INTEGER,

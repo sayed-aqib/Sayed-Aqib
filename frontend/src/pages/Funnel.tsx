@@ -45,16 +45,35 @@ export function Funnel() {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <GlassCard>
           <div className="flex items-start justify-between">
-            <h3 className="font-semibold text-ink">Shopify: sessions to purchase</h3>
+            <span className="flex items-center gap-1">
+              <h3 className="font-semibold text-ink">Shopify: home page to purchase</h3>
+              <InfoTip>
+                Home page and product page views aren't in a real Shopify export yet — placeholder data until that's
+                wired up. Modelled as a subset of sessions: not every session visits the home page first, some land
+                straight on a product page from an ad.
+              </InfoTip>
+            </span>
             {shopify.low_confidence && <LowConfidenceBadge sampleSize={shopify.completed_checkout} />}
           </div>
           <div className="mt-4 space-y-4">
             <FunnelStep label="Sessions" count={shopify.sessions} shareOfSessions={1} isFirst />
             <FunnelStep
+              label="Home page views"
+              count={shopify.home_page_views}
+              shareOfSessions={shopify.home_page_view_rate}
+              dropOff={shopify.drop_off_sessions_to_home}
+            />
+            <FunnelStep
+              label="Product page views"
+              count={shopify.product_page_views}
+              shareOfSessions={shopify.product_page_view_rate}
+              dropOff={shopify.drop_off_home_to_product}
+            />
+            <FunnelStep
               label="Added to cart"
               count={shopify.added_to_cart}
               shareOfSessions={shopify.added_to_cart_rate}
-              dropOff={shopify.drop_off_sessions_to_cart}
+              dropOff={shopify.drop_off_product_to_cart}
             />
             <FunnelStep
               label="Reached checkout"

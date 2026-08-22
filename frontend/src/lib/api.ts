@@ -62,12 +62,19 @@ export function getUnitEconomicsSummary(params?: { start?: string; end?: string 
 
 export interface ShopifyFunnel {
   sessions: number;
+  home_page_views: number;
+  product_page_views: number;
   added_to_cart: number;
   reached_checkout: number;
   completed_checkout: number;
+  home_page_view_rate: number;
+  product_page_view_rate: number;
   added_to_cart_rate: number;
   reached_checkout_rate: number;
   completed_checkout_rate: number;
+  drop_off_sessions_to_home: number;
+  drop_off_home_to_product: number;
+  drop_off_product_to_cart: number;
   drop_off_sessions_to_cart: number;
   drop_off_cart_to_checkout: number;
   drop_off_checkout_to_purchase: number;

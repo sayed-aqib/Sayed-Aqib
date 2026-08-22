@@ -17,7 +17,10 @@ from backend.models.parsing import parse_flexible_date
 from backend.models.schemas import ShopifyFunnelDailyRow
 
 SOURCE = "shopify_funnel_daily"
-COLUMNS = ["date", "sessions", "added_to_cart", "reached_checkout", "completed_checkout", "source_file"]
+COLUMNS = [
+    "date", "sessions", "home_page_views", "product_page_views",
+    "added_to_cart", "reached_checkout", "completed_checkout", "source_file",
+]
 
 
 def ingest_shopify_funnel_daily(con: duckdb.DuckDBPyConnection, path: Path) -> IngestResult:
@@ -35,8 +38,8 @@ def ingest_shopify_funnel_daily(con: duckdb.DuckDBPyConnection, path: Path) -> I
 
     tuples = [
         (
-            parse_flexible_date(r.date_raw).date(), r.sessions, r.added_to_cart,
-            r.reached_checkout, r.completed_checkout, file_label,
+            parse_flexible_date(r.date_raw).date(), r.sessions, r.home_page_views, r.product_page_views,
+            r.added_to_cart, r.reached_checkout, r.completed_checkout, file_label,
         )
         for r in valid_rows
     ]

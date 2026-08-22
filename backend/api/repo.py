@@ -72,7 +72,8 @@ def get_flipkart_traffic(con: duckdb.DuckDBPyConnection, start: date, end: date)
 def get_shopify_funnel_daily(con: duckdb.DuckDBPyConnection, start: date, end: date) -> pd.DataFrame:
     return con.execute(
         """
-        SELECT date, sessions, added_to_cart, reached_checkout, completed_checkout
+        SELECT date, sessions, home_page_views, product_page_views,
+               added_to_cart, reached_checkout, completed_checkout
         FROM shopify_funnel_daily
         WHERE date >= ? AND date < ?
         """,

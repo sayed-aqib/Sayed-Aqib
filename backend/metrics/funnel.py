@@ -1,10 +1,14 @@
 """Two funnels, never merged into one number.
 
-Shopify: sessions -> add to cart -> checkout started -> purchase, each step
-as a rate of total sessions and a drop-off from the step before. Amazon:
-sessions -> unit session % -> units, by child ASIN/product — the only shape
-Amazon's own traffic report gives us, so there's no cart/checkout stage to
-show for it.
+Shopify: sessions -> home page views -> product page views -> add to cart ->
+checkout started -> purchase, each step as a rate of total sessions and a
+drop-off from the step before. Home page and product page views are a
+session-level behavior count, not a separate traffic source — modelled as
+strictly nested inside sessions (not every session visits the home page;
+some land straight on a product page from an ad), so the funnel stays
+monotonically non-increasing top to bottom. Amazon: sessions -> unit
+session % -> units, by child ASIN/product — the only shape Amazon's own
+traffic report gives us, so there's no cart/checkout stage to show for it.
 """
 
 from __future__ import annotations
@@ -17,28 +21,41 @@ def _safe_div(a: float, b: float) -> float:
 
 
 def shopify_funnel(df: pd.DataFrame, min_sample: int = 30) -> dict:
-    """``df`` is shopify_funnel_daily rows for the window (any grain that
-    has sessions/added_to_cart/reached_checkout/completed_checkout columns)."""
+    """``df`` is shopify_funnel_daily rows for the window (any grain that has
+    sessions/home_page_views/product_page_views/added_to_cart/reached_checkout/
+    completed_checkout columns — home_page_views and product_page_views fall
+    back to 0 if absent, so older-shaped data doesn't raise)."""
     if df.empty:
-        sessions = added = checkout = completed = 0
+        sessions = home = product = added = checkout = completed = 0
     else:
         sessions = int(df["sessions"].sum())
+        home = int(df.get("home_page_views", pd.Series(dtype="int64")).sum())
+        product = int(df.get("product_page_views", pd.Series(dtype="int64")).sum())
         added = int(df["added_to_cart"].sum())
         checkout = int(df["reached_checkout"].sum())
         completed = int(df["completed_checkout"].sum())
 
+    home_rate = _safe_div(home, sessions)
+    product_rate = _safe_div(product, sessions)
     added_rate = _safe_div(added, sessions)
     checkout_rate = _safe_div(checkout, sessions)
     completed_rate = _safe_div(completed, sessions)
 
     return {
         "sessions": sessions,
+        "home_page_views": home,
+        "product_page_views": product,
         "added_to_cart": added,
         "reached_checkout": checkout,
         "completed_checkout": completed,
+        "home_page_view_rate": home_rate,
+        "product_page_view_rate": product_rate,
         "added_to_cart_rate": added_rate,
         "reached_checkout_rate": checkout_rate,
         "completed_checkout_rate": completed_rate,
+        "drop_off_sessions_to_home": 1 - home_rate,
+        "drop_off_home_to_product": 1 - _safe_div(product, home),
+        "drop_off_product_to_cart": 1 - _safe_div(added, product),
         "drop_off_sessions_to_cart": 1 - added_rate,
         "drop_off_cart_to_checkout": 1 - _safe_div(checkout, added),
         "drop_off_checkout_to_purchase": 1 - _safe_div(completed, checkout),

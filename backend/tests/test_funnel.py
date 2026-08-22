@@ -31,6 +31,32 @@ def test_shopify_funnel_sums_and_computes_drop_off():
     assert result["low_confidence"] is True  # only 15 completed checkouts, below min_sample=30
 
 
+def test_shopify_funnel_includes_home_and_product_page_views():
+    df = pd.DataFrame([
+        {
+            "sessions": 100, "home_page_views": 70, "product_page_views": 40,
+            "added_to_cart": 20, "reached_checkout": 10, "completed_checkout": 5,
+        },
+    ])
+    result = shopify_funnel(df, min_sample=30)
+
+    assert result["home_page_views"] == 70
+    assert result["product_page_views"] == 40
+    assert result["home_page_view_rate"] == pytest.approx(0.70)
+    assert result["product_page_view_rate"] == pytest.approx(0.40)
+    assert result["drop_off_sessions_to_home"] == pytest.approx(1 - 0.70)
+    assert result["drop_off_home_to_product"] == pytest.approx(1 - 40 / 70)
+    assert result["drop_off_product_to_cart"] == pytest.approx(1 - 20 / 40)
+
+
+def test_shopify_funnel_falls_back_to_zero_when_page_view_columns_absent():
+    # older-shaped input (e.g. before this column existed) shouldn't raise
+    df = pd.DataFrame([{"sessions": 100, "added_to_cart": 20, "reached_checkout": 10, "completed_checkout": 5}])
+    result = shopify_funnel(df, min_sample=30)
+    assert result["home_page_views"] == 0
+    assert result["product_page_view_rate"] == 0.0
+
+
 def test_shopify_funnel_flags_low_confidence_on_thin_conversions():
     df = pd.DataFrame([
         {"sessions": 500, "added_to_cart": 50, "reached_checkout": 10, "completed_checkout": 2},

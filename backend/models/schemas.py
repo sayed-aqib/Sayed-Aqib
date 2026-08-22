@@ -113,6 +113,13 @@ class SessionReferrerRow(_Row):
 class ShopifyFunnelDailyRow(_Row):
     date_raw: str = Field(alias="Date")
     sessions: int = Field(default=0, alias="Sessions")
+    # No real Shopify export has these two yet -- Shopify's own analytics
+    # export doesn't break sessions down by page. Placeholder column names,
+    # populated on synthetic data until a real page-view source (Shopify's
+    # own analytics, or GA4) is wired up -- see CLAUDE.md on fixing the
+    # adapter and generator together when a real file's columns differ.
+    home_page_views: int = Field(default=0, alias="Home Page Views")
+    product_page_views: int = Field(default=0, alias="Product Page Views")
     added_to_cart: int = Field(default=0, alias="Added to Cart")
     reached_checkout: int = Field(default=0, alias="Reached Checkout")
     completed_checkout: int = Field(default=0, alias="Completed Checkout")

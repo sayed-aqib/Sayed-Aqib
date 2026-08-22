@@ -438,18 +438,25 @@ def gen_sessions_daily(events: list[OrderEvent], start: date, days: int, rng: ra
 def gen_shopify_funnel_daily(
     events: list[OrderEvent], sessions_daily_rows: list[dict], rng: random.Random
 ) -> tuple[list[str], list[dict]]:
-    """Shopify's own funnel report: sessions -> add to cart -> checkout ->
-    purchase. Built from the same per-day session counts as sessions_by_day
-    (so the two reports agree on sessions) and anchored to the *actual*
-    per-day order count for completed checkout, then worked backwards
-    through realistic drop-off ratios — otherwise "completed checkout" and
-    the real order count drift apart with nothing tying them together."""
+    """Shopify's own funnel report: sessions -> home page views -> product
+    page views -> add to cart -> checkout -> purchase. Built from the same
+    per-day session counts as sessions_by_day (so the two reports agree on
+    sessions) and anchored to the *actual* per-day order count for completed
+    checkout, then worked backwards through realistic drop-off ratios —
+    otherwise "completed checkout" and the real order count drift apart with
+    nothing tying them together. Home/product page views have no real export
+    yet (see ShopifyFunnelDailyRow) — modelled as strictly nested inside
+    sessions, same backward-from-the-next-step technique as the rest of this
+    funnel, so the whole chain stays monotonically non-increasing."""
     shopify_orders_by_day: dict[int, int] = {}
     for ev in events:
         if ev.channel == "shopify":
             shopify_orders_by_day[ev.day_offset] = shopify_orders_by_day.get(ev.day_offset, 0) + 1
 
-    fieldnames = ["Date", "Sessions", "Added to Cart", "Reached Checkout", "Completed Checkout"]
+    fieldnames = [
+        "Date", "Sessions", "Home Page Views", "Product Page Views",
+        "Added to Cart", "Reached Checkout", "Completed Checkout",
+    ]
     rows = []
     for day_offset, row in enumerate(sessions_daily_rows):
         sessions = row["Sessions"]
@@ -463,13 +470,26 @@ def gen_shopify_funnel_daily(
         added_to_cart = max(
             reached_checkout, int(reached_checkout / cart_to_checkout_rate) if cart_to_checkout_rate else 0
         )
-        added_to_cart = min(added_to_cart, sessions)
+        product_to_cart_rate = rng.uniform(0.20, 0.40)
+        product_page_views = max(
+            added_to_cart, int(added_to_cart / product_to_cart_rate) if product_to_cart_rate else 0
+        )
+        home_to_product_rate = rng.uniform(0.45, 0.75)
+        home_page_views = max(
+            product_page_views, int(product_page_views / home_to_product_rate) if home_to_product_rate else 0
+        )
+
+        home_page_views = min(home_page_views, sessions)
+        product_page_views = min(product_page_views, home_page_views)
+        added_to_cart = min(added_to_cart, product_page_views)
         reached_checkout = min(reached_checkout, added_to_cart)
         completed_checkout = min(completed_checkout, reached_checkout)
 
         rows.append({
             "Date": row["Date"],
             "Sessions": sessions,
+            "Home Page Views": home_page_views,
+            "Product Page Views": product_page_views,
             "Added to Cart": added_to_cart,
             "Reached Checkout": reached_checkout,
             "Completed Checkout": completed_checkout,
