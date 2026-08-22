@@ -125,6 +125,18 @@ DDL_STATEMENTS = [
     )
     """,
     """
+    CREATE TABLE IF NOT EXISTS flipkart_product_traffic_daily (
+        date                    DATE NOT NULL,
+        raw_fsn                 VARCHAR NOT NULL,
+        product_id              VARCHAR,
+        sessions                INTEGER,
+        units_ordered           INTEGER,
+        ordered_product_sales   DOUBLE,
+        source_file             VARCHAR NOT NULL,
+        PRIMARY KEY (date, raw_fsn)
+    )
+    """,
+    """
     CREATE TABLE IF NOT EXISTS search_query_weekly (
         week_start          DATE NOT NULL,
         search_query        VARCHAR NOT NULL,

@@ -35,6 +35,7 @@ from backend.metrics.unit_economics import (
     amazon_sku_day_economics,
     apply_ad_spend,
     channel_summary,
+    flipkart_sku_day_economics,
     load_costs_config,
     rollup,
     shopify_line_economics,
@@ -65,8 +66,10 @@ def unit_economics_summary(
 
     orders_df, items_df = repo.get_shopify_orders_and_items(con, start, end)
     traffic_df = repo.get_amazon_traffic(con, start, end)
+    flipkart_traffic_df = repo.get_flipkart_traffic(con, start, end)
     shopify_ad_spend = repo.get_ad_spend_total(con, "meta", start, end)
     amazon_ad_spend = repo.get_ad_spend_total(con, "amazon", start, end)
+    flipkart_ad_spend = repo.get_ad_spend_total(con, "flipkart", start, end)
 
     if not items_df.empty:
         shopify_lines = apply_ad_spend(
@@ -93,9 +96,23 @@ def unit_economics_summary(
         amazon_rows = pd.DataFrame(columns=["net_revenue", "contribution_margin", "units_ordered"])
         amazon_by_sku = pd.DataFrame(columns=EMPTY_ECON_COLS + ["channel"])
 
-    channels = channel_summary(shopify_by_order, amazon_rows, min_sample=min_sample)
+    if not flipkart_traffic_df.empty:
+        flipkart_rows = apply_ad_spend(
+            flipkart_sku_day_economics(flipkart_traffic_df, costs), flipkart_ad_spend, weight_col="units_ordered"
+        )
+        flipkart_by_sku = rollup(flipkart_rows, "product_id", extra_sum_cols=["units_ordered"]).rename(
+            columns={"units_ordered": "units"}
+        )
+        flipkart_by_sku["channel"] = "flipkart"
+    else:
+        flipkart_rows = pd.DataFrame(columns=["net_revenue", "contribution_margin", "units_ordered"])
+        flipkart_by_sku = pd.DataFrame(columns=EMPTY_ECON_COLS + ["channel"])
 
-    sku_df = pd.concat([shopify_by_sku, amazon_by_sku], ignore_index=True, sort=False)
+    channels = channel_summary(
+        [("shopify", shopify_by_order), ("amazon", amazon_rows), ("flipkart", flipkart_rows)], min_sample=min_sample
+    )
+
+    sku_df = pd.concat([shopify_by_sku, amazon_by_sku, flipkart_by_sku], ignore_index=True, sort=False)
     if not sku_df.empty:
         sku_df["low_confidence"] = sku_df["units"] < min_sample
         sku_df["name"] = sku_df["product_id"].map(product_names).fillna(sku_df["product_id"])
@@ -118,6 +135,8 @@ def _cost_version_out(v: CostVersion) -> dict:
         "shopify_gateway_fixed": v.shopify_gateway_fixed,
         "amazon_referral_pct": v.amazon_referral_pct,
         "amazon_fba_per_unit": v.amazon_fba_per_unit,
+        "flipkart_commission_pct": v.flipkart_commission_pct,
+        "flipkart_shipping_per_unit": v.flipkart_shipping_per_unit,
         "returns_provision_pct": v.returns_provision_pct,
     }
 

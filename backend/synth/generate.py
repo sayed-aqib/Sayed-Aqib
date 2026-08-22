@@ -69,6 +69,8 @@ class Product:
     rename_from: str | None = None
     rename_sku_from: str | None = None
     rename_cutover_day: int | None = None
+    fsn: str | None = None
+    flipkart_title: str | None = None
 
 
 PRODUCTS = [
@@ -78,7 +80,9 @@ PRODUCTS = [
         amazon_title="Hayah Care Nuts & Seeds Supermix, 400g Jar",
         asin="B0HAYA0001",
         price=999.0,
-        channels=("shopify", "amazon"),
+        channels=("shopify", "amazon", "flipkart"),
+        fsn="FSNHAYA0001",
+        flipkart_title="Hayah Care Nuts & Seeds Supermix - 400g",
     ),
     Product(
         sku="MOM-400",
@@ -86,10 +90,12 @@ PRODUCTS = [
         amazon_title="Hayah Care Mom's Supermix, 400g Jar",
         asin="B0HAYA0002",
         price=999.0,
-        channels=("shopify", "amazon"),
+        channels=("shopify", "amazon", "flipkart"),
         rename_from="Mom's Mix 400g",
         rename_sku_from="MOM-MIX-400",
         rename_cutover_day=90,
+        fsn="FSNHAYA0002",
+        flipkart_title="Hayah Care Mom's Supermix - 400g",
     ),
     Product(
         sku="CK-2PK",
@@ -111,6 +117,7 @@ PRODUCTS = [
 
 SHOPIFY_PRODUCTS = [p for p in PRODUCTS if "shopify" in p.channels]
 AMAZON_PRODUCTS = [p for p in PRODUCTS if "amazon" in p.channels]
+FLIPKART_PRODUCTS = [p for p in PRODUCTS if "flipkart" in p.channels]
 
 
 def shopify_title_sku(product: Product, order_day_offset: int) -> tuple[str, str]:
@@ -214,7 +221,15 @@ def gen_order_events(
         n_orders_today = poisson(expected, rng)
 
         for _ in range(n_orders_today):
-            channel = "shopify" if rng.random() < 0.62 else "amazon"
+            channel_roll = rng.random()
+            # Flipkart is the newest, smallest channel — a modest share, not
+            # an even three-way split with Shopify and Amazon.
+            if channel_roll < 0.58:
+                channel = "shopify"
+            elif channel_roll < 0.88:
+                channel = "amazon"
+            else:
+                channel = "flipkart"
             # 35% chance of a repeat customer once we're > 30 days in
             repeat_pool = [
                 cid for cid, last_day in last_order_day.items()
@@ -226,7 +241,12 @@ def gen_order_events(
             else:
                 customer = rng.choice(customers)
 
-            products = SHOPIFY_PRODUCTS if channel == "shopify" else AMAZON_PRODUCTS
+            if channel == "shopify":
+                products = SHOPIFY_PRODUCTS
+            elif channel == "amazon":
+                products = AMAZON_PRODUCTS
+            else:
+                products = FLIPKART_PRODUCTS
             first_pick = rng.choice(products)
             items = [(first_pick, rng.choice([1, 1, 1, 2]))]
             # cross-sell: Chukku Kappi buyers sometimes add a 999 mix, and vice versa
@@ -533,6 +553,51 @@ def gen_amazon_detail_page_sales_traffic(start: date, days: int, rng: random.Ran
     return fieldnames, rows
 
 
+def gen_flipkart_product_traffic(start: date, days: int, rng: random.Random) -> tuple[list[str], list[dict]]:
+    """Mirrors gen_amazon_detail_page_sales_traffic, scaled down — Flipkart
+    is the newest, smallest channel, so sessions and units are a fraction of
+    Amazon's rather than a matching volume."""
+    fieldnames = ["Date", "FSN", "Product Title", "Sessions", "Units Sold", "GMV (INR)"]
+    rows = []
+    for day_offset in range(days):
+        day = start + timedelta(days=day_offset)
+        for p in FLIPKART_PRODUCTS:
+            sessions = max(0, int(rng.gauss(7, 4)))
+            unit_session_pct = rng.uniform(0.02, 0.09)
+            units = poisson(sessions * unit_session_pct, rng)
+            rows.append({
+                "Date": day.isoformat(),
+                "FSN": p.fsn,
+                "Product Title": p.flipkart_title,
+                "Sessions": sessions,
+                "Units Sold": units,
+                "GMV (INR)": round(units * p.price, 2),
+            })
+    return fieldnames, rows
+
+
+def gen_flipkart_returns(events: list[OrderEvent], rng: random.Random) -> tuple[list[str], list[dict]]:
+    fieldnames = ["Return Date", "Order ID", "SKU", "ASIN", "Return Reason", "Return Quantity", "Refund Amount"]
+    reasons = ["Item defective", "No longer needed", "Wrong item sent", "Better price found", "Product damaged in transit"]
+    rows = []
+    for ev in events:
+        if ev.channel != "flipkart":
+            continue
+        if rng.random() < 0.05:
+            product, qty = ev.items[0]
+            return_day = ev.dt + timedelta(days=rng.randint(2, 14))
+            rows.append({
+                "Return Date": return_day.date().isoformat(),
+                "Order ID": f"FLPKT-{ev.order_seq}",
+                "SKU": product.sku,
+                "ASIN": product.fsn,
+                "Return Reason": rng.choice(reasons),
+                "Return Quantity": qty,
+                "Refund Amount": round(product.price * qty, 2),
+            })
+    return fieldnames, rows
+
+
 def gen_search_query_performance(start: date, days: int, rng: random.Random) -> tuple[list[str], list[dict]]:
     fieldnames = [
         "Search Query", "Week Start Date", "Impressions: Total Count",
@@ -775,6 +840,14 @@ def generate(seed: int, days: int, end_date: date, out_dir: Path, n_customers: i
     fn, rows = gen_amazon_returns(events, rng)
     write_csv(out_dir / "amazon_returns" / "amazon_returns.csv", fn, rows)
     counts["amazon_returns"] = len(rows)
+
+    fn, rows = gen_flipkart_product_traffic(start, days, rng)
+    write_csv(out_dir / "flipkart_product_traffic" / "flipkart_product_traffic.csv", fn, rows)
+    counts["flipkart_product_traffic"] = len(rows)
+
+    fn, rows = gen_flipkart_returns(events, rng)
+    write_csv(out_dir / "flipkart_returns" / "flipkart_returns.csv", fn, rows)
+    counts["flipkart_returns"] = len(rows)
 
     fn, rows = gen_meta_ads_insights(start, days, rng)
     write_csv(out_dir / "meta_ads_insights" / "meta_ads_insights.csv", fn, rows)

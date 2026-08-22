@@ -28,6 +28,7 @@ class SkuMap:
         map_cfg = yaml.safe_load(map_path.read_text(encoding="utf-8")) or {}
         self.shopify_sku_aliases: dict[str, str] = map_cfg.get("shopify_sku_aliases", {})
         self.amazon_asin_aliases: dict[str, str] = map_cfg.get("amazon_asin_aliases", {})
+        self.flipkart_fsn_aliases: dict[str, str] = map_cfg.get("flipkart_fsn_aliases", {})
         self.title_aliases: dict[str, str] = map_cfg.get("title_aliases", {})
 
     def resolve_shopify(self, raw_sku: str, raw_title: str) -> str | None:
@@ -44,6 +45,15 @@ class SkuMap:
             return raw_asin
         if raw_asin in self.amazon_asin_aliases:
             return self.amazon_asin_aliases[raw_asin]
+        if raw_title in self.title_aliases:
+            return self.title_aliases[raw_title]
+        return None
+
+    def resolve_flipkart(self, raw_fsn: str, raw_title: str) -> str | None:
+        if raw_fsn in self.product_ids:
+            return raw_fsn
+        if raw_fsn in self.flipkart_fsn_aliases:
+            return self.flipkart_fsn_aliases[raw_fsn]
         if raw_title in self.title_aliases:
             return self.title_aliases[raw_title]
         return None

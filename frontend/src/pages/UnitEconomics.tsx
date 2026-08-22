@@ -7,7 +7,7 @@ import { LowConfidenceBadge } from "../components/LowConfidenceBadge";
 import { CardSkeleton } from "../components/Skeleton";
 import { SealBadge } from "../components/SealBadge";
 
-const CHANNEL_LABEL: Record<string, string> = { shopify: "Shopify", amazon: "Amazon" };
+const CHANNEL_LABEL: Record<string, string> = { shopify: "Shopify", amazon: "Amazon", flipkart: "Flipkart" };
 
 const COST_LINES: { key: keyof SkuSummary; label: string; definition: string }[] = [
   { key: "cogs", label: "Cost of goods", definition: "What we paid to make what sold — ingredients and production." },
@@ -148,20 +148,22 @@ export function UnitEconomics() {
 
   const shopify = data.channels.find((c) => c.channel === "shopify");
   const amazon = data.channels.find((c) => c.channel === "amazon");
+  const flipkart = data.channels.find((c) => c.channel === "flipkart");
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-ink">Unit Economics</h2>
         <p className="text-sm text-ink-muted">
-          Where the money actually goes, {data.start} to {data.end}. Amazon and Shopify are shown side by side on
-          purpose — different fees, different shipping, different margin.
+          Where the money actually goes, {data.start} to {data.end}. Every channel is shown side by side on purpose —
+          different fees, different shipping, different margin.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {shopify && <ChannelCard summary={shopify} skus={data.skus} />}
         {amazon && <ChannelCard summary={amazon} skus={data.skus} />}
+        {flipkart && <ChannelCard summary={flipkart} skus={data.skus} />}
       </div>
 
       <SkuTable skus={data.skus} />

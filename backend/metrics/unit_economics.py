@@ -36,6 +36,8 @@ class CostVersion:
     amazon_referral_pct: float
     amazon_fba_per_unit: float
     returns_provision_pct: dict[str, float]
+    flipkart_commission_pct: float = 0.0
+    flipkart_shipping_per_unit: float = 0.0
 
 
 @dataclass
@@ -68,6 +70,8 @@ def load_costs_config(path: str | Path) -> CostsConfig:
             amazon_referral_pct=float(fees["amazon_referral_pct"]),
             amazon_fba_per_unit=float(fees["amazon_fba_per_unit"]),
             returns_provision_pct=dict(v["returns_provision_pct"]),
+            flipkart_commission_pct=float(fees.get("flipkart_commission_pct", 0.0)),
+            flipkart_shipping_per_unit=float(fees.get("flipkart_shipping_per_unit", 0.0)),
         ))
     versions.sort(key=lambda v: v.effective_date)
     return CostsConfig(versions=versions)
@@ -100,6 +104,8 @@ def upsert_cost_version(path: str | Path, version: CostVersion) -> CostsConfig:
                     "shopify_gateway_fixed": v.shopify_gateway_fixed,
                     "amazon_referral_pct": v.amazon_referral_pct,
                     "amazon_fba_per_unit": v.amazon_fba_per_unit,
+                    "flipkart_commission_pct": v.flipkart_commission_pct,
+                    "flipkart_shipping_per_unit": v.flipkart_shipping_per_unit,
                 },
                 "returns_provision_pct": v.returns_provision_pct,
             }
@@ -199,6 +205,33 @@ def amazon_sku_day_economics(traffic_df: pd.DataFrame, costs: CostsConfig) -> pd
     return df
 
 
+def flipkart_sku_day_economics(traffic_df: pd.DataFrame, costs: CostsConfig) -> pd.DataFrame:
+    """One row per (date, product_id) — same grain as Amazon's, for the same
+    reason: Flipkart Seller Hub gives sellers a daily aggregate, not an
+    order-level export. Fee shape differs from Amazon's referral+FBA model:
+    Flipkart bills a flat commission % plus a per-unit shipping/collection
+    fee rather than folding shipping into one all-in per-unit fee."""
+    df = traffic_df.copy().reset_index(drop=True)
+    versions = [costs.for_date(_as_date(d)) for d in df["date"]]
+
+    cogs_per_unit = [v.cogs_per_unit.get(pid, 0.0) for v, pid in zip(versions, df["product_id"])]
+    packaging_per_unit = [v.packaging_per_unit.get(pid, 0.0) for v, pid in zip(versions, df["product_id"])]
+    commission_pct = pd.Series([v.flipkart_commission_pct for v in versions], index=df.index)
+    shipping_per_unit = pd.Series([v.flipkart_shipping_per_unit for v in versions], index=df.index)
+    returns_pct = pd.Series([v.returns_provision_pct.get("flipkart", 0.0) for v in versions], index=df.index)
+
+    df["net_revenue"] = df["ordered_product_sales"]
+    df["cogs"] = df["units_ordered"] * pd.Series(cogs_per_unit, index=df.index)
+    df["packaging"] = df["units_ordered"] * pd.Series(packaging_per_unit, index=df.index)
+    df["fees"] = df["net_revenue"] * commission_pct
+    df["shipping"] = df["units_ordered"] * shipping_per_unit
+    df["returns_provision"] = df["net_revenue"] * returns_pct
+    df["contribution_before_ad_spend"] = (
+        df["net_revenue"] - df["cogs"] - df["packaging"] - df["shipping"] - df["fees"] - df["returns_provision"]
+    )
+    return df
+
+
 def apply_ad_spend(econ_df: pd.DataFrame, total_ad_spend: float, weight_col: str | None) -> pd.DataFrame:
     """Blend ``total_ad_spend`` across rows — evenly if weight_col is None
     (one Shopify order = one weight), or proportional to weight_col (Amazon
@@ -226,15 +259,18 @@ def rollup(df_with_ad_spend: pd.DataFrame, by: str | list[str], extra_sum_cols: 
     return grouped
 
 
-def channel_summary(shopify_econ: pd.DataFrame, amazon_econ: pd.DataFrame, min_sample: int = 30) -> pd.DataFrame:
-    """Shopify and Amazon side by side — never blended into one number,
-    because their cost structures and even their data grain differ. Sample
-    size is order count for Shopify and total units for Amazon (its closest
-    analog, since it has no discrete orders); either way, fewer than
-    ``min_sample`` sets low_confidence so a thin channel isn't read as fact.
+def channel_summary(channel_frames: list[tuple[str, pd.DataFrame]], min_sample: int = 30) -> pd.DataFrame:
+    """Every channel side by side — never blended into one number, because
+    cost structure and even data grain differ channel to channel. Sample
+    size is order count for Shopify and total units for a marketplace
+    channel (its closest analog, since it has no discrete orders); either
+    way, fewer than ``min_sample`` sets low_confidence so a thin channel
+    isn't read as fact. Takes a list, not fixed shopify/amazon parameters,
+    so a new channel (Flipkart, and whatever comes after it) is a longer
+    list, not a signature change.
     """
     rows = []
-    for channel, df in [("shopify", shopify_econ), ("amazon", amazon_econ)]:
+    for channel, df in channel_frames:
         if df.empty:
             sample_size, net_revenue, contribution_margin = 0, 0.0, 0.0
         else:

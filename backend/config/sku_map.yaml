@@ -15,6 +15,10 @@ amazon_asin_aliases:
   B0HAYA0002: MOM-400
   B0HAYA0003: NSS-830
 
+flipkart_fsn_aliases:
+  FSNHAYA0001: NSS-400
+  FSNHAYA0002: MOM-400
+
 title_aliases:
   "Mom's Mix 400g": MOM-400
   "Mom's Supermix 400g": MOM-400

@@ -22,7 +22,9 @@ function emptyVersionFor(products: ProductRef[]): CostVersion {
     shopify_gateway_fixed: 0,
     amazon_referral_pct: 0,
     amazon_fba_per_unit: 0,
-    returns_provision_pct: { shopify: 0, amazon: 0 },
+    flipkart_commission_pct: 0,
+    flipkart_shipping_per_unit: 0,
+    returns_provision_pct: { shopify: 0, amazon: 0, flipkart: 0 },
   };
 }
 
@@ -189,6 +191,19 @@ export function Settings() {
               onChange={(v) => setForm((f) => f && { ...f, amazon_fba_per_unit: v })}
               suffix="₹"
             />
+            <NumberField
+              label="Flipkart commission"
+              value={Math.round(form.flipkart_commission_pct * 1000) / 10}
+              onChange={(v) => setForm((f) => f && { ...f, flipkart_commission_pct: v / 100 })}
+              suffix="%"
+              step={0.1}
+            />
+            <NumberField
+              label="Flipkart shipping per unit"
+              value={form.flipkart_shipping_per_unit}
+              onChange={(v) => setForm((f) => f && { ...f, flipkart_shipping_per_unit: v })}
+              suffix="₹"
+            />
           </div>
         </Card>
 
@@ -207,6 +222,13 @@ export function Settings() {
               label="Amazon"
               value={Math.round(form.returns_provision_pct.amazon * 1000) / 10}
               onChange={(v) => setForm((f) => f && { ...f, returns_provision_pct: { ...f.returns_provision_pct, amazon: v / 100 } })}
+              suffix="%"
+              step={0.1}
+            />
+            <NumberField
+              label="Flipkart"
+              value={Math.round((form.returns_provision_pct.flipkart ?? 0) * 1000) / 10}
+              onChange={(v) => setForm((f) => f && { ...f, returns_provision_pct: { ...f.returns_provision_pct, flipkart: v / 100 } })}
               suffix="%"
               step={0.1}
             />

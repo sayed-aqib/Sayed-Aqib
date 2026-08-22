@@ -17,6 +17,8 @@ from backend.ingest import (
     amazon_sp_campaign_report,
     amazon_sp_search_term_report,
     amazon_search_query_performance,
+    flipkart_product_traffic,
+    flipkart_returns,
     meta_ads_insights,
     shopify_abandoned_checkouts,
     shopify_customers,
@@ -50,6 +52,8 @@ def run_all(con: duckdb.DuckDBPyConnection, raw_dir: Path) -> list[IngestResult]
         "amazon_sp_campaign_report": lambda p: amazon_sp_campaign_report.ingest_sp_campaign_report(con, p),
         "amazon_sp_search_term_report": lambda p: amazon_sp_search_term_report.ingest_sp_search_term_report(con, p),
         "amazon_returns": lambda p: amazon_returns.ingest_amazon_returns(con, p, sku_map),
+        "flipkart_product_traffic": lambda p: flipkart_product_traffic.ingest_flipkart_product_traffic(con, p, sku_map),
+        "flipkart_returns": lambda p: flipkart_returns.ingest_flipkart_returns(con, p, sku_map),
         "meta_ads_insights": lambda p: meta_ads_insights.ingest_meta_ads_insights(con, p),
     }
 

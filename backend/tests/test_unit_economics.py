@@ -8,6 +8,7 @@ from backend.metrics.unit_economics import (
     amazon_sku_day_economics,
     apply_ad_spend,
     channel_summary,
+    flipkart_sku_day_economics,
     load_costs_config,
     rollup,
     shopify_line_economics,
@@ -65,9 +66,28 @@ def _new_version(effective_date: date, nss_cogs: float) -> CostVersion:
     )
 
 
+_FIXTURE_COSTS_YAML = """# Costs Hayah Care actually pays. Nothing here is guessed.
+versions:
+  - effective_date: 2026-01-01
+    cogs_per_unit:
+      NSS-400: 320.0
+    packaging_per_unit:
+      NSS-400: 25.0
+    shipping_shopify_per_order: 90.0
+    fees:
+      shopify_gateway_pct: 0.02
+      shopify_gateway_fixed: 3.0
+      amazon_referral_pct: 0.15
+      amazon_fba_per_unit: 65.0
+    returns_provision_pct:
+      shopify: 0.02
+      amazon: 0.04
+"""
+
+
 def test_upsert_cost_version_appends_and_preserves_history(tmp_path):
     dest = tmp_path / "costs.yaml"
-    dest.write_text(open(COSTS_PATH, encoding="utf-8").read(), encoding="utf-8")
+    dest.write_text(_FIXTURE_COSTS_YAML, encoding="utf-8")
 
     updated = upsert_cost_version(dest, _new_version(date(2026, 6, 1), 999.0))
 
@@ -80,7 +100,7 @@ def test_upsert_cost_version_appends_and_preserves_history(tmp_path):
 
 def test_upsert_cost_version_same_effective_date_replaces_not_duplicates(tmp_path):
     dest = tmp_path / "costs.yaml"
-    dest.write_text(open(COSTS_PATH, encoding="utf-8").read(), encoding="utf-8")
+    dest.write_text(_FIXTURE_COSTS_YAML, encoding="utf-8")
 
     upsert_cost_version(dest, _new_version(date(2026, 6, 1), 999.0))
     updated = upsert_cost_version(dest, _new_version(date(2026, 6, 1), 500.0))
@@ -224,8 +244,35 @@ def test_channel_summary_flags_low_confidence_under_30_orders():
         "units_ordered": [5] * 5,
         "contribution_margin": [1900.0] * 5,
     })
-    summary = channel_summary(shopify_econ, amazon_econ, min_sample=30)
+    summary = channel_summary([("shopify", shopify_econ), ("amazon", amazon_econ)], min_sample=30)
     shopify_row = summary[summary["channel"] == "shopify"].iloc[0]
     assert shopify_row["sample_size"] == 10
     assert bool(shopify_row["low_confidence"]) is True
     assert shopify_row["contribution_margin"] == pytest.approx(5000.0)
+
+
+def test_channel_summary_accepts_an_arbitrary_number_of_channels():
+    flipkart_econ = pd.DataFrame({
+        "net_revenue": [999.0] * 40,
+        "units_ordered": [1] * 40,
+        "contribution_margin": [400.0] * 40,
+    })
+    summary = channel_summary([("flipkart", flipkart_econ)], min_sample=30)
+    assert list(summary["channel"]) == ["flipkart"]
+    assert summary.iloc[0]["low_confidence"] == False
+
+
+def test_flipkart_sku_day_economics_applies_commission_and_per_unit_shipping():
+    costs = load_costs_config(COSTS_PATH)
+    traffic = pd.DataFrame({
+        "date": [date(2026, 3, 1)],
+        "product_id": ["NSS-400"],
+        "units_ordered": [3],
+        "ordered_product_sales": [2997.0],
+    })
+    econ = flipkart_sku_day_economics(traffic, costs)
+    row = econ.iloc[0]
+    v = costs.for_date(date(2026, 3, 1))
+    assert row["fees"] == pytest.approx(2997.0 * v.flipkart_commission_pct)
+    assert row["shipping"] == pytest.approx(3 * v.flipkart_shipping_per_unit)
+    assert row["cogs"] == pytest.approx(3 * v.cogs_per_unit["NSS-400"])

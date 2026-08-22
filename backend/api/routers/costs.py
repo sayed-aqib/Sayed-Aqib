@@ -22,6 +22,8 @@ class CostVersionIn(BaseModel):
     shopify_gateway_fixed: float
     amazon_referral_pct: float
     amazon_fba_per_unit: float
+    flipkart_commission_pct: float = 0.0
+    flipkart_shipping_per_unit: float = 0.0
     returns_provision_pct: dict[str, float]
 
 
@@ -41,6 +43,8 @@ def post_cost_version(body: CostVersionIn, con: duckdb.DuckDBPyConnection = Depe
         shopify_gateway_fixed=body.shopify_gateway_fixed,
         amazon_referral_pct=body.amazon_referral_pct,
         amazon_fba_per_unit=body.amazon_fba_per_unit,
+        flipkart_commission_pct=body.flipkart_commission_pct,
+        flipkart_shipping_per_unit=body.flipkart_shipping_per_unit,
         returns_provision_pct=body.returns_provision_pct,
     )
     return save_cost_version(con, version)

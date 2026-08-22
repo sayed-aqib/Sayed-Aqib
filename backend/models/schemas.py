@@ -206,6 +206,21 @@ class AmazonReturnRow(_Row):
     refund_amount: float = Field(default=0.0, alias="Refund Amount")
 
 
+class FlipkartProductTrafficRow(_Row):
+    """Flipkart Seller Hub's sales/traffic report doesn't exist in the source
+    list yet — no real export has been seen. Column names here are a
+    best-guess placeholder in the same spirit as the other invented exports;
+    per CLAUDE.md, fix this schema and backend/synth/generate.py together the
+    day a real Flipkart file arrives."""
+
+    fsn: str = Field(alias="FSN")
+    title: str = Field(default="", alias="Product Title")
+    sessions: int = Field(default=0, alias="Sessions")
+    units_ordered: int = Field(default=0, alias="Units Sold")
+    ordered_product_sales: float = Field(default=0.0, alias="GMV (INR)")
+    date_raw: str = Field(alias="Date")
+
+
 class MetaAdsRow(_Row):
     date_raw: str = Field(alias="Reporting starts")
     campaign_name: str = Field(alias="Campaign name")

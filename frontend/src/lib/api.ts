@@ -1,5 +1,5 @@
 export interface ChannelSummary {
-  channel: "shopify" | "amazon";
+  channel: "shopify" | "amazon" | "flipkart";
   sample_size: number;
   low_confidence: boolean;
   net_revenue: number;
@@ -10,7 +10,7 @@ export interface ChannelSummary {
 export interface SkuSummary {
   product_id: string;
   name: string;
-  channel: "shopify" | "amazon";
+  channel: "shopify" | "amazon" | "flipkart";
   net_revenue: number;
   cogs: number;
   packaging: number;
@@ -233,6 +233,8 @@ export interface CostVersion {
   shopify_gateway_fixed: number;
   amazon_referral_pct: number;
   amazon_fba_per_unit: number;
+  flipkart_commission_pct: number;
+  flipkart_shipping_per_unit: number;
   returns_provision_pct: Record<string, number>;
 }
 

@@ -58,6 +58,17 @@ def get_amazon_traffic(con: duckdb.DuckDBPyConnection, start: date, end: date) -
     ).df()
 
 
+def get_flipkart_traffic(con: duckdb.DuckDBPyConnection, start: date, end: date) -> pd.DataFrame:
+    return con.execute(
+        """
+        SELECT date, raw_fsn, product_id, sessions, units_ordered, ordered_product_sales
+        FROM flipkart_product_traffic_daily
+        WHERE date >= ? AND date < ?
+        """,
+        [start, end],
+    ).df()
+
+
 def get_shopify_funnel_daily(con: duckdb.DuckDBPyConnection, start: date, end: date) -> pd.DataFrame:
     return con.execute(
         """
@@ -130,6 +141,7 @@ def get_warehouse_date_bounds(con: duckdb.DuckDBPyConnection) -> tuple[date | No
         SELECT MIN(d), MAX(d) FROM (
             SELECT CAST(created_at AS DATE) AS d FROM orders
             UNION ALL SELECT date FROM amazon_product_traffic_daily
+            UNION ALL SELECT date FROM flipkart_product_traffic_daily
         )
         """
     ).fetchone()
