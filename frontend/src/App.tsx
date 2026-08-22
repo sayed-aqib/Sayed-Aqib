@@ -14,7 +14,7 @@ const PAGES = {
   funnel: { label: "Funnel", component: Funnel, icon: FunnelIcon },
   retention: { label: "Retention", component: Retention, icon: RetentionIcon },
   keywords: { label: "Amazon Keywords", component: Keywords, icon: SearchIcon },
-  "meta-ads": { label: "Meta Ads", component: MetaAds, icon: MegaphoneIcon },
+  "meta-ads": { label: "Ad Campaigns", component: MetaAds, icon: MegaphoneIcon },
   settings: { label: "Costs", component: Settings, icon: GearIcon },
 } as const;
 

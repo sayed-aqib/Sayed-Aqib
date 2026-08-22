@@ -197,7 +197,7 @@ export interface AdsetRecommendation {
   cpa_7d: number | null;
   cpm_7d: number;
   ctr_7d: number;
-  frequency_7d: number;
+  frequency_7d: number | null;
   new_customer_share_7d: number;
   spend_28d: number | null;
   roas_28d: number | null;
@@ -211,6 +211,7 @@ export interface AdsetRecommendation {
 
 export interface MetaAdsSummary {
   as_of: string;
+  platform?: string;
   breakeven: BreakevenEconomics;
   blended_mer: number | null;
   platform_roas_28d: number | null;
@@ -222,6 +223,18 @@ export function getMetaAdsSummary(params?: { as_of?: string }): Promise<MetaAdsS
   if (params?.as_of) search.set("as_of", params.as_of);
   const qs = search.toString();
   return getJSON(`/api/meta-ads/summary${qs ? `?${qs}` : ""}`);
+}
+
+export type AdPlatform = "meta" | "amazon" | "flipkart";
+
+/** Same shape as getMetaAdsSummary, generalized to any platform in
+ * ad_spend_daily -- Amazon Sponsored Products and Flipkart Ads are scored
+ * with the exact same rule engine, each against its own channel's
+ * break-even (see backend/api/services.py:campaign_scoring_summary). */
+export function getCampaignScoringSummary(platform: AdPlatform, params?: { as_of?: string }): Promise<MetaAdsSummary> {
+  const search = new URLSearchParams({ platform });
+  if (params?.as_of) search.set("as_of", params.as_of);
+  return getJSON(`/api/campaigns/summary?${search.toString()}`);
 }
 
 export interface CostVersion {

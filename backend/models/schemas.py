@@ -206,6 +206,23 @@ class AmazonReturnRow(_Row):
     refund_amount: float = Field(default=0.0, alias="Refund Amount")
 
 
+class FlipkartAdsCampaignRow(_Row):
+    """Flipkart Ads (the platform's own sponsored-listing product) doesn't
+    have a real export on file yet either — same placeholder-schema
+    situation as FlipkartProductTrafficRow above. Modelled closely on
+    Amazon's Sponsored Products campaign report shape since both are
+    campaign-grain, no adset concept."""
+
+    date_raw: str = Field(alias="Date")
+    campaign_name: str = Field(alias="Campaign Name")
+    campaign_status: str = Field(default="", alias="Campaign Status")
+    views: int = Field(default=0, alias="Views")
+    clicks: int = Field(default=0, alias="Clicks")
+    ad_spend: float = Field(default=0.0, alias="Ad Spend")
+    direct_units: int = Field(default=0, alias="Direct Units")
+    direct_revenue: float = Field(default=0.0, alias="Direct Revenue")
+
+
 class FlipkartProductTrafficRow(_Row):
     """Flipkart Seller Hub's sales/traffic report doesn't exist in the source
     list yet — no real export has been seen. Column names here are a

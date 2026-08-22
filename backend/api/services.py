@@ -244,24 +244,72 @@ def keywords_summary(con: duckdb.DuckDBPyConnection, start: date, end: date) -> 
     }
 
 
-def meta_ads_summary(
+# Which channel's economics a platform's spend should be judged against —
+# Meta drives Shopify traffic, Amazon Sponsored Products drives Amazon
+# sales, Flipkart Ads drives Flipkart sales. Each channel has its own
+# margin, so each platform gets its own break-even line, not one blended
+# number across all ad spend.
+PLATFORM_CHANNEL = {"meta": "shopify", "amazon": "amazon", "flipkart": "flipkart"}
+
+
+def _channel_econ_28d(
+    con: duckdb.DuckDBPyConnection, channel: str, window_28_start: date, as_of: date, costs
+) -> pd.DataFrame:
+    """Net revenue + contribution-before-ad-spend rows for a channel, at
+    whatever grain that channel's data comes in (Shopify: one row per order;
+    Amazon/Flipkart: one row per date/SKU) — breakeven_economics() only sums
+    those two columns, so the different grain doesn't matter to it."""
+    if channel == "shopify":
+        orders_28, items_28 = repo.get_shopify_orders_and_items(con, window_28_start, as_of)
+        if items_28.empty:
+            return pd.DataFrame(columns=["net_revenue", "contribution_before_ad_spend"])
+        return (
+            shopify_line_economics(orders_28, items_28, costs)
+            .groupby("order_id")[["net_revenue", "contribution_before_ad_spend"]]
+            .sum()
+            .reset_index()
+        )
+    if channel == "amazon":
+        traffic_28 = repo.get_amazon_traffic(con, window_28_start, as_of)
+        return amazon_sku_day_economics(traffic_28, costs) if not traffic_28.empty else pd.DataFrame(
+            columns=["net_revenue", "contribution_before_ad_spend"]
+        )
+    if channel == "flipkart":
+        traffic_28 = repo.get_flipkart_traffic(con, window_28_start, as_of)
+        return flipkart_sku_day_economics(traffic_28, costs) if not traffic_28.empty else pd.DataFrame(
+            columns=["net_revenue", "contribution_before_ad_spend"]
+        )
+    raise ValueError(f"unknown channel: {channel!r}")
+
+
+def campaign_scoring_summary(
     con: duckdb.DuckDBPyConnection,
+    platform: str,
     as_of: date,
     costs_path: str | Path = DEFAULT_COSTS_PATH,
     rules_path: str | Path = DEFAULT_META_RULES_PATH,
 ) -> dict:
+    """Generalizes the Step 6 Meta budget engine to any platform present in
+    ad_spend_daily. Same rules (config/meta_rules.yaml), same
+    rolling_adset_metrics/recommend_budget_actions/creative_fatigue_flags —
+    a rule-based system, not a model, scored per platform per CLAUDE.md's
+    own "rules, not a model" constraint. ``meta_ads_summary`` below is a
+    thin wrapper of this for platform="meta", kept so the existing Meta Ads
+    page and its response shape don't change."""
+    channel = PLATFORM_CHANNEL[platform]
     rules = load_meta_rules(rules_path)
     window_7_start = as_of - timedelta(days=7)
     window_28_start = as_of - timedelta(days=28)
     fatigue_lookback_start = as_of - timedelta(days=60)
 
-    daily_7 = repo.get_ad_spend_daily_rows(con, "meta", window_7_start, as_of)
-    daily_28 = repo.get_ad_spend_daily_rows(con, "meta", window_28_start, as_of)
-    daily_fatigue = repo.get_ad_spend_daily_rows(con, "meta", fatigue_lookback_start, as_of)
+    daily_7 = repo.get_ad_spend_daily_rows(con, platform, window_7_start, as_of)
+    daily_28 = repo.get_ad_spend_daily_rows(con, platform, window_28_start, as_of)
+    daily_fatigue = repo.get_ad_spend_daily_rows(con, platform, fatigue_lookback_start, as_of)
 
     if daily_7.empty:
         return {
             "as_of": as_of.isoformat(),
+            "platform": platform,
             "breakeven": {"contribution_margin_ratio": 0.0, "breakeven_roas": None, "allowable_cpa": 0.0, "sample_size": 0},
             "blended_mer": None,
             "platform_roas_28d": None,
@@ -269,22 +317,13 @@ def meta_ads_summary(
         }
 
     costs = load_costs_config(costs_path)
-    orders_28, items_28 = repo.get_shopify_orders_and_items(con, window_28_start, as_of)
-    if not items_28.empty:
-        order_econ_28 = (
-            shopify_line_economics(orders_28, items_28, costs)
-            .groupby("order_id")[["net_revenue", "contribution_before_ad_spend"]]
-            .sum()
-            .reset_index()
-        )
-    else:
-        order_econ_28 = pd.DataFrame(columns=["order_id", "net_revenue", "contribution_before_ad_spend"])
-    breakeven = breakeven_economics(order_econ_28)
+    econ_28 = _channel_econ_28d(con, channel, window_28_start, as_of, costs)
+    breakeven = breakeven_economics(econ_28)
 
     metrics_7d = rolling_adset_metrics(daily_7)
     metrics_28d = rolling_adset_metrics(daily_28).set_index(["campaign_name", "adset_name"])
     fatigue = creative_fatigue_flags(daily_fatigue, rules).set_index(["campaign_name", "adset_name"])
-    adset_first_seen = repo.get_adset_first_seen(con, "meta")
+    adset_first_seen = repo.get_adset_first_seen(con, platform)
     adset_age_days = {k: (as_of - v).days for k, v in adset_first_seen.items()}
 
     recommendations = recommend_budget_actions(metrics_7d, breakeven, rules, adset_age_days).set_index(
@@ -293,8 +332,8 @@ def meta_ads_summary(
 
     total_spend_28d = float(daily_28["spend"].sum())
     total_revenue_28d_platform = float(daily_28["revenue"].sum())
-    shopify_revenue_28d = float(order_econ_28["net_revenue"].sum())
-    blended_mer = (shopify_revenue_28d / total_spend_28d) if total_spend_28d else None
+    channel_revenue_28d = float(econ_28["net_revenue"].sum())
+    blended_mer = (channel_revenue_28d / total_spend_28d) if total_spend_28d else None
     platform_roas_28d = (total_revenue_28d_platform / total_spend_28d) if total_spend_28d else None
 
     adsets = []
@@ -328,8 +367,18 @@ def meta_ads_summary(
 
     return {
         "as_of": as_of.isoformat(),
+        "platform": platform,
         "breakeven": breakeven,
         "blended_mer": blended_mer,
         "platform_roas_28d": platform_roas_28d,
         "adsets": adsets,
     }
+
+
+def meta_ads_summary(
+    con: duckdb.DuckDBPyConnection,
+    as_of: date,
+    costs_path: str | Path = DEFAULT_COSTS_PATH,
+    rules_path: str | Path = DEFAULT_META_RULES_PATH,
+) -> dict:
+    return campaign_scoring_summary(con, "meta", as_of, costs_path, rules_path)

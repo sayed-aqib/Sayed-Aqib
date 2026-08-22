@@ -706,6 +706,38 @@ def gen_sp_search_term_report(start: date, days: int, rng: random.Random) -> tup
     return fieldnames, rows
 
 
+FLIPKART_CAMPAIGNS = ["Hayah - Flipkart - Supermix Sponsored"]
+
+
+def gen_flipkart_ads_campaign_report(start: date, days: int, rng: random.Random) -> tuple[list[str], list[dict]]:
+    """Mirrors gen_sp_campaign_report — same campaign-grain shape, scaled to
+    a much smaller budget since Flipkart Ads is the newest acquisition
+    channel here, not yet a meaningfully funded one."""
+    fieldnames = ["Date", "Campaign Name", "Campaign Status", "Views", "Clicks", "Ad Spend", "Direct Units", "Direct Revenue"]
+    rows = []
+    for day_offset in range(days):
+        day = start + timedelta(days=day_offset)
+        for camp in FLIPKART_CAMPAIGNS:
+            views = max(0, int(rng.gauss(300, 120)))
+            ctr = rng.uniform(0.004, 0.015)
+            clicks = int(views * ctr)
+            cpc = rng.uniform(5, 14)
+            spend = round(clicks * cpc, 2)
+            units = poisson(clicks * rng.uniform(0.02, 0.06), rng)
+            revenue = round(units * 999.0, 2)
+            rows.append({
+                "Date": day.isoformat(),
+                "Campaign Name": camp,
+                "Campaign Status": "enabled",
+                "Views": views,
+                "Clicks": clicks,
+                "Ad Spend": spend,
+                "Direct Units": units,
+                "Direct Revenue": revenue,
+            })
+    return fieldnames, rows
+
+
 def gen_amazon_returns(events: list[OrderEvent], rng: random.Random) -> tuple[list[str], list[dict]]:
     fieldnames = ["Return Date", "Order ID", "SKU", "ASIN", "Return Reason", "Return Quantity", "Refund Amount"]
     reasons = ["Item defective", "No longer needed", "Wrong item sent", "Better price found", "Product damaged in transit"]
@@ -848,6 +880,10 @@ def generate(seed: int, days: int, end_date: date, out_dir: Path, n_customers: i
     fn, rows = gen_flipkart_returns(events, rng)
     write_csv(out_dir / "flipkart_returns" / "flipkart_returns.csv", fn, rows)
     counts["flipkart_returns"] = len(rows)
+
+    fn, rows = gen_flipkart_ads_campaign_report(start, days, rng)
+    write_csv(out_dir / "flipkart_ads_campaign_report" / "flipkart_ads_campaign_report.csv", fn, rows)
+    counts["flipkart_ads_campaign_report"] = len(rows)
 
     fn, rows = gen_meta_ads_insights(start, days, rng)
     write_csv(out_dir / "meta_ads_insights" / "meta_ads_insights.csv", fn, rows)
