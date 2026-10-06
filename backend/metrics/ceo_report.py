@@ -9,6 +9,68 @@ approval, only three are being built end to end first — net_revenue,
 new_customers, total_ad_spend, including the date-range filter and
 comparison-period logic — the other nine stay signatures until that's done.
 
+CHANNEL SCOPE POLICY (one rule, applied to all twelve):
+
+    A metric may blend channels in its numerator ONLY IF the denominator
+    it's divided by (if any) is measurable across that same set of
+    channels. If the denominator's channel coverage is structurally
+    narrower than the numerator's — not temporarily, but because of a real
+    gap like "no customer identity on this marketplace" — the metric does
+    NOT report a blended number. It reports one value per channel where the
+    ratio actually resolves, each explicitly labelled by channel, plus a
+    separate, differently-named metric for the channels where it doesn't.
+    A number that moves for a reason unrelated to what it claims to measure
+    is worse than no number.
+
+    A pure aggregation with no denominator (a sum, a count) has no
+    numerator/denominator asymmetry to check and blends freely.
+
+    Audited against all twelve below:
+
+      net_revenue            no denominator — blends freely (Shopify + Amazon)
+      revenue_growth         inherits net_revenue's scope — same
+      new_customers           no denominator (a count) — Shopify only, because
+                              Amazon/Flipkart have no customer_id to count in
+                              the first place, not because of this policy
+      repeat_customer_rate    ratio, but BOTH sides were already Shopify-only
+                              from the start (Amazon customers can't enter
+                              either side) — no asymmetry to create
+      repeat_product_rate     same as repeat_customer_rate — no asymmetry
+      customer_lifetime_value AOV x orders/yr x lifespan, all three factors
+                              drawn from the same Shopify-only order set —
+                              no asymmetry
+      return_refund_rate      ratio; numerator (refund value/units) already
+                              spans Shopify+Amazon via `returns`, so the
+                              denominator (gross sales/units) is made to
+                              match by taking amazon_traffic too — blended on
+                              BOTH sides, consistent, no asymmetry
+      total_ad_spend          no denominator — blends freely across platforms
+      CAC                     *** THE ASYMMETRIC CASE ***. Numerator (ad
+                              spend) can span every platform; denominator
+                              (new_customers) can only ever be Shopify. Per
+                              this policy: NO blended CAC. See redesigned
+                              signature below — reported per platform that
+                              actually targets Shopify (Meta today), with
+                              cost_per_purchase as the named substitute
+                              everywhere else, not a blended stand-in.
+      roas                    ratio, but numerator and denominator are drawn
+                              from the SAME ad_spend_daily rows for
+                              source="platform_attributed", so scope always
+                              matches regardless of which platform is chosen
+                              — no asymmetry for that source. source=
+                              "order_attributed" is a SECOND asymmetric case:
+                              its numerator (orders.total) can only ever
+                              reflect Shopify orders, so pairing it with
+                              platform="amazon" or "flipkart" spend is not
+                              computable and must say so, not silently
+                              return a number — see roas()'s docstring below.
+      cost_per_purchase       ratio, but numerator and denominator are the
+                              same ad_spend_daily rows for one platform — no
+                              asymmetry, which is exactly why this is CAC's
+                              substitute wherever CAC can't resolve
+      inventory_value         not a channel ratio (per-SKU stock valuation,
+                              channel-agnostic) — policy doesn't apply
+
 Design decisions baked into these signatures, flagged for confirmation:
 
   - Every function takes FULL order/customer history, not a pre-windowed
@@ -268,10 +330,11 @@ def return_refund_rate(
       by_units: (Shopify refund-line quantity + Amazon returns.quantity)
                 / units sold (Shopify + Amazon) in `period`
 
-    NOTE: takes `amazon_traffic` — absent from the first draft of this
-    signature, which would have computed a *rate* against a *Shopify-only*
-    denominator while blending Amazon's refund value into the numerator.
-    Caught while reviewing this contract, not after implementing it.
+    Takes `amazon_traffic` deliberately, confirmed on review: net_revenue
+    blends Shopify + Amazon, so if this card didn't too, the two cards would
+    contradict each other over the same underlying refunds on the same
+    screen — that's an arithmetic requirement, not a style choice. See the
+    CHANNEL SCOPE POLICY above.
 
     Directional colour is inverted on this card (down is good) — a UI
     concern, noted here since the metric function has no opinion on colour,
@@ -295,18 +358,31 @@ def total_ad_spend(
     raise NotImplementedError
 
 
-def cac(
-    ad_spend_daily: pd.DataFrame,
-    orders: pd.DataFrame,
-    period: DateRange,
-    comparison: DateRange,
-    platform: str | None = None,
-) -> MetricResult:
-    """CAC = total_ad_spend(period, platform) / new_customers(period).
-    Labelled explicitly as BLENDED CAC in `note` — spend isn't attributed to
-    the customer who converted, so this is spend-per-new-customer across the
-    whole funnel, not a per-channel acquisition cost. Shopify-only
-    denominator, same structural ceiling as New Customers.
+CAC_RESOLVABLE_PLATFORMS = ("meta",)
+"""Platforms whose spend targets a channel where new_customers can actually
+be counted (Shopify). Amazon Sponsored Products and Flipkart Ads drive
+traffic to marketplace listings with no customer_id on the resulting order
+— there is no version of "new Amazon customers" to divide by, blended or
+not, so those platforms never get a CAC number at all; cost_per_purchase is
+their metric. This tuple is what cac() checks `platform` against below."""
+
+
+def cac(ad_spend_daily: pd.DataFrame, orders: pd.DataFrame, period: DateRange, comparison: DateRange, platform: str) -> MetricResult:
+    """CAC = total_ad_spend(period, platform) / new_customers(period), for
+    ONE named platform — `platform` is required, no blended default. Per
+    CHANNEL SCOPE POLICY: the denominator (new_customers) only ever resolves
+    on Shopify, so a blended-across-platforms CAC would move whenever
+    Amazon/Flipkart spend changes for a reason that has nothing to do with
+    how many customers were actually acquired. That's the asymmetric case
+    this policy exists to catch.
+
+    `platform` must be in CAC_RESOLVABLE_PLATFORMS (today: just "meta" —
+    the one platform whose spend targets Shopify traffic). Called with any
+    other platform, this returns status="not_available" (not an error, not
+    a blended fallback) with `note` pointing at cost_per_purchase(platform=...)
+    as the metric that platform actually gets instead. Nothing here decides
+    that Amazon/Flipkart CAC will "arrive later" — per the customer-identity
+    assumption, it structurally won't, unless that assumption changes.
     """
     raise NotImplementedError
 
@@ -336,6 +412,16 @@ def roas(
         wrong at the sub-campaign windowing (attribution lag/last-touch
         assumptions) — no better or worse than the platform's own claim,
         just differently wrong. `note` says which source was used.
+
+    SECOND asymmetric case, per CHANNEL SCOPE POLICY: source="order_attributed"
+    combined with platform="amazon" or "flipkart" is not computable —
+    orders.attributed_campaign, wherever it comes from, can only ever
+    reflect a Shopify order (Amazon/Flipkart sales never pass through
+    `orders` at all — see amazon_traffic/flipkart_traffic). That combination
+    must return status="not_available", not silently divide by a numerator
+    that's always zero. source="platform_attributed" has no such
+    restriction — it's valid for every platform, since numerator and
+    denominator are always the same platform's own ad_spend_daily rows.
     """
     raise NotImplementedError
 

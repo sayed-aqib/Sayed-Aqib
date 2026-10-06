@@ -7,67 +7,72 @@
 # version effective on *their own* date, so editing this file never changes
 # a past month's numbers — see backend/metrics/unit_economics.py:CostsConfig.
 versions:
-  - effective_date: 2026-01-01
-
-    cogs_per_unit:
-      NSS-400: 320.0
-      MOM-400: 300.0
-      CK-2PK: 90.0
-      NSS-830: 560.0
-
-    packaging_per_unit:
-      NSS-400: 25.0
-      MOM-400: 25.0
-      CK-2PK: 12.0
-      NSS-830: 35.0
-
-    # brand-borne shipping — the free-shipping leak the brief calls out.
-    # Amazon shipping cost is folded into the FBA fee below, not listed
-    # separately, because that's how Amazon bills it. Flipkart bills
-    # shipping/collection separately from its commission, unlike Amazon, so
-    # it gets its own per-unit field below instead of being folded in.
-    shipping_shopify_per_order: 90.0
-
-    fees:
-      shopify_gateway_pct: 0.020
-      shopify_gateway_fixed: 3.0
-      amazon_referral_pct: 0.15
-      amazon_fba_per_unit: 65.0
-      flipkart_commission_pct: 0.13
-      flipkart_shipping_per_unit: 55.0
-
-    # forward-looking provision, applied as a % of revenue on top of any
-    # returns actually booked in the `returns` table for that period.
-    returns_provision_pct:
-      shopify: 0.02
-      amazon: 0.04
-      flipkart: 0.04
-
-  - effective_date: 2026-08-20
-
-    cogs_per_unit:
-      NSS-400: 320.0
-      MOM-400: 300.0
-      CK-2PK: 90.0
-      NSS-830: 560.0
-
-    packaging_per_unit:
-      NSS-400: 25.0
-      MOM-400: 25.0
-      CK-2PK: 12.0
-      NSS-830: 35.0
-
-    shipping_shopify_per_order: 90.0
-
-    fees:
-      shopify_gateway_pct: 0.020
-      shopify_gateway_fixed: 3.0
-      amazon_referral_pct: 0.15
-      amazon_fba_per_unit: 65.0
-      flipkart_commission_pct: 0.13
-      flipkart_shipping_per_unit: 55.0
-
-    returns_provision_pct:
-      shopify: 0.02
-      amazon: 0.04
-      flipkart: 0.04
+- effective_date: 2026-01-01
+  cogs_per_unit:
+    NSS-400: 320.0
+    MOM-400: 300.0
+    CK-2PK: 90.0
+    NSS-830: 560.0
+  packaging_per_unit:
+    NSS-400: 25.0
+    MOM-400: 25.0
+    CK-2PK: 12.0
+    NSS-830: 35.0
+  shipping_shopify_per_order: 90.0
+  fees:
+    shopify_gateway_pct: 0.02
+    shopify_gateway_fixed: 3.0
+    amazon_referral_pct: 0.15
+    amazon_fba_per_unit: 65.0
+    flipkart_commission_pct: 0.13
+    flipkart_shipping_per_unit: 55.0
+  returns_provision_pct:
+    shopify: 0.02
+    amazon: 0.04
+    flipkart: 0.04
+- effective_date: 2026-08-20
+  cogs_per_unit:
+    NSS-400: 320.0
+    MOM-400: 300.0
+    CK-2PK: 90.0
+    NSS-830: 560.0
+  packaging_per_unit:
+    NSS-400: 25.0
+    MOM-400: 25.0
+    CK-2PK: 12.0
+    NSS-830: 35.0
+  shipping_shopify_per_order: 90.0
+  fees:
+    shopify_gateway_pct: 0.02
+    shopify_gateway_fixed: 3.0
+    amazon_referral_pct: 0.15
+    amazon_fba_per_unit: 65.0
+    flipkart_commission_pct: 0.13
+    flipkart_shipping_per_unit: 55.0
+  returns_provision_pct:
+    shopify: 0.02
+    amazon: 0.04
+    flipkart: 0.04
+- effective_date: 2026-08-23
+  cogs_per_unit:
+    NSS-400: 320.0
+    MOM-400: 300.0
+    CK-2PK: 90.0
+    NSS-830: 560.0
+  packaging_per_unit:
+    NSS-400: 25.0
+    MOM-400: 25.0
+    CK-2PK: 12.0
+    NSS-830: 35.0
+  shipping_shopify_per_order: 90.0
+  fees:
+    shopify_gateway_pct: 0.02
+    shopify_gateway_fixed: 3.0
+    amazon_referral_pct: 0.15
+    amazon_fba_per_unit: 65.0
+    flipkart_commission_pct: 0.13
+    flipkart_shipping_per_unit: 55.0
+  returns_provision_pct:
+    shopify: 0.02
+    amazon: 0.04
+    flipkart: 0.04
